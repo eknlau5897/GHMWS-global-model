@@ -286,7 +286,7 @@ for fxx in fxx_list:
         ds_4 = ds_4.sel(latitude=slice(90, 0), longitude=slice(90, 180))
         ds_11 = ds_11.sel(latitude=slice(90, 0), longitude=slice(90, 180))
         fig, ax2 = plt.subplots(figsize=(12, 12), constrained_layout=True, subplot_kw={'projection': ccrs.PlateCarree()})
-        plot_background(ax2)
+        plot_background_2(ax2)
 
         gradient_colors = [
             "#FFFFFF", "#F0F0F0", "#E0E0E0", "#D0D0D0",
