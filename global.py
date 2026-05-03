@@ -17,7 +17,7 @@ input_date = sys.argv[1]
 dt = datetime.strptime(input_date, "%Y%m%d%H")
 run_str = dt.strftime("%Y-%m-%d %H:%M")
 
-save_path = r"/Users/eknlau/VS_code/GHMWS/model/ECMWF/NWP/850hPa wind+MSLP" # Adjust for Linux if needed
+save_path = r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/NWP/850hPa wind+MSLP" # Adjust for Linux if needed
 os.makedirs(save_path, exist_ok=True)
 
 fxx_list = [0, 24, 48, 72, 96, 120, 144, 168, 192, 216, 240]
@@ -133,7 +133,7 @@ for fxx in fxx_list:
         plt.close(fig)  
 
         print("所有圖片已全部生成！")
-        save_path_2 = r"/Users/eknlau/VS_code/GHMWS/model/ECMWF/South China/850hPa wind"
+        save_path_2 = r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/South China/850hPa wind"
         os.makedirs(save_path_2, exist_ok=True)
 
         print(f"Fetching {run_str} FXX {fxx}...")
@@ -212,7 +212,7 @@ for fxx in fxx_list:
         plt.savefig(save_full_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print("所有圖片已全部生成！")
-        save_path_3=r"/Users/eknlau/VS_code/GHMWS/model/ECMWF/NWP/500hPa GH+MSLP"
+        save_path_3=r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/NWP/500hPa GH+MSLP"
         os.makedirs(save_path, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
@@ -269,7 +269,7 @@ for fxx in fxx_list:
         plt.close(fig)  
 
         print("所有圖片已全部生成！")
-        save_path_4=r"/Users/eknlau/VS_code/GHMWS/model/ECMWF/South China/10m wind + MSLP"
+        save_path_4=r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/South China/10m wind + MSLP"
         os.makedirs(save_path_4, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
