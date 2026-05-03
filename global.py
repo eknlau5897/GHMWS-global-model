@@ -10,6 +10,8 @@ import earthkit.data
 from datetime import datetime
 from herbie import Herbie
 import numpy as np
+from metpy import calc as mpcalc
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 
 if len(sys.argv) < 2:
     print("Usage: python plot_weather.py YYYYMMDDHH")
