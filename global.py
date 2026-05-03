@@ -8,6 +8,8 @@ import cartopy.feature as cfeature
 from ecmwf.opendata import Client
 import earthkit.data
 from datetime import datetime
+from herbie import Herbie
+import numpy as np
 
 if len(sys.argv) < 2:
     print("Usage: python plot_weather.py YYYYMMDDHH")
