@@ -96,7 +96,7 @@ for fxx in fxx_list:
         ds_4.longitude,
         ds_4.latitude,
         ds_4*3.6/1.852,
-        transform=pc,
+        transform=ccrs.PlateCarree(),
         cmap=cmap_custom,
         norm=norm_custom,
         levels=custom_levels,
@@ -106,13 +106,13 @@ for fxx in fxx_list:
         mslp_levels = np.arange(800, 1100, 2)
         cs = ax.contour(ds_mslp.longitude, ds_mslp.latitude, mslp_hpa,
                         levels=mslp_levels, colors='black', linewidths=0.85,
-                        transform=pc)
+                        transform=ccrs.PlateCarree())
         ax.clabel(cs, inline=True, fontsize=10, fmt='%d')
 
         u_kts = ds_2.u * 3.6 / 1.852
         v_kts = ds_3.v * 3.6 / 1.852
         ax.barbs(ds_2.longitude, ds_2.latitude, u_kts, v_kts,
-                 length=6, transform=pc, color='gray', linewidth=0.9)
+                 length=6, transform=ccrs.PlateCarree(), color='gray', linewidth=0.9)
 
         ax.set_title(f'850hPa wind + MSLP(hPa)', fontsize=14)
 
@@ -182,7 +182,7 @@ for fxx in fxx_list:
             ds_4.longitude,
             ds_4.latitude,
             ds_4*3.6/1.852,
-            transform=pc,
+            transform=ccrs.PlateCarree(),
             cmap=cmap_custom,
             norm=norm_custom,
             levels=custom_levels,
@@ -192,7 +192,7 @@ for fxx in fxx_list:
         u_kts = ds_2.u * 3.6 / 1.852
         v_kts = ds_3.v * 3.6 / 1.852
         ax2.barbs(ds_2.longitude, ds_2.latitude, u_kts, v_kts,
-                 length=6, transform=pc, color='gray', linewidth=0.85)
+                 length=6, transform=ccrs.PlateCarree(), color='gray', linewidth=0.85)
 
         ax2.set_title(f'850hPa wind', fontsize=14)
 
@@ -238,7 +238,7 @@ for fxx in fxx_list:
             gh_dagpm.longitude,
             gh_dagpm.latitude,
             gh_dagpm,
-            transform=pc,
+            transform=ccrs.PlateCarree(),
             cmap="turbo",
             levels=np.arange(468, 606, 6),
             alpha=0.85
@@ -247,7 +247,7 @@ for fxx in fxx_list:
         mslp_levels = np.arange(800, 1100, 2)
         cs = ax.contour(ds_mslp.longitude, ds_mslp.latitude, mslp_hpa,
                         levels=mslp_levels, colors='black', linewidths=0.85,
-                        transform=pc)
+                        transform=ccrs.PlateCarree())
         ax.clabel(cs, inline=True, fontsize=10, fmt='%d')
 
         ax.set_title(f'500hPa Geopotential Height (dagpm) + MSLP(hPa)', fontsize=14)
@@ -315,7 +315,7 @@ for fxx in fxx_list:
             ds_4.longitude,
             ds_4.latitude,
             ds_4*3.6/1.852,
-            transform=pc,
+            transform=ccrs.PlateCarree(),
             cmap=cmap_custom,
             norm=norm_custom,
             levels=custom_levels,
@@ -325,7 +325,7 @@ for fxx in fxx_list:
         u_kts = ds_2.u10 * 3.6 / 1.852
         v_kts = ds_3.v10 * 3.6 / 1.852
         ax2.barbs(ds_2.longitude, ds_2.latitude, u_kts, v_kts,
-                 length=6, transform=pc, color='gray', linewidth=0.85)
+                 length=6, transform=ccrs.PlateCarree(), color='gray', linewidth=0.85)
 
         msl_contour = ax2.contour(
             ds_11.longitude,
@@ -333,7 +333,7 @@ for fxx in fxx_list:
             ds_11.msl/100,
             levels=np.arange(800, 1100, 2),
             colors='black',
-            transform=pc
+            transform=ccrs.PlateCarree()
         )
 
         ax2.clabel(msl_contour, fontsize=10, inline=1, inline_spacing=1, fmt='%i', rightside_up=True)
