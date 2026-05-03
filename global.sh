@@ -5,6 +5,7 @@ echo "=== GHMWS Automation Started ==="
 
 while true
 do
+    git pull origin main
     # 1. Calculate the latest cycle (00z or 12z)
     CURRENT_HOUR=$(date -u +"%H")
     if [ "$CURRENT_HOUR" -lt 09 ]; then
@@ -23,6 +24,9 @@ do
     # 2. Run Python
     $PYTHON_CMD $SCRIPT_PATH $RUN_DATE
 
+    git add .
+    git commit -m "Auto update for $RUN_DATE"
+    git push origin main
     # 3. Check Result
 if [ $? -eq 0 ]; then
     echo "Run $RUN_DATE complete. Sleeping for 3 hours..."
