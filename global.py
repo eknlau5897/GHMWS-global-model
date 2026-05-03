@@ -363,5 +363,5 @@ for fxx in fxx_list:
         print(f"Error at FXX {fxx}: {e}")
         sys.exit(1) # Tell Shell script that data isn't ready yet
 
-        print("Success")
-    sys.exit(0)
+    print("Success")
+sys.exit(0)
