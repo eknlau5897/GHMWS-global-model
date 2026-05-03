@@ -339,7 +339,7 @@ for fxx in fxx_list:
         ax2.clabel(msl_contour, fontsize=10, inline=1, inline_spacing=1, fmt='%i', rightside_up=True)
 
         ax2.set_title(f'10m wind + MSLP(hPa)', fontsize=14)
-        cb1 = fig.colorbar(p, ax=ax, orientation='horizontal')
+        cb1 = fig.colorbar(p, ax=ax2, orientation='horizontal')
         cb1.set_label(f'Knots', size='x-large')
         cb1.set_ticks([0,7,16,25,34,40,46,52,58,64,80,96,110,125,140,155])
         cb1.ax.tick_params(labelsize=12)
