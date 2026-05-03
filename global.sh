@@ -24,11 +24,11 @@ do
     $PYTHON_CMD $SCRIPT_PATH $RUN_DATE
 
     # 3. Check Result
-    if [ $? -eq 0 ]; then
-        echo "Run $RUN_DATE complete. Sleeping for 3 hours..."
-        sleep 43200
-    else
-        echo "Data for $RUN_DATE not ready yet. Retrying in 20 minutes..."
-        sleep 1200
-    fi
+if [ $? -eq 0 ]; then
+    echo "Run $RUN_DATE complete. Sleeping for 3 hours..."
+    sleep 43200
+else
+    echo "Data for $RUN_DATE not ready yet. Retrying in 20 minutes..."
+    sleep 1200
+fi
 done
