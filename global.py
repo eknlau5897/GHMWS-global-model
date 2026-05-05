@@ -418,8 +418,8 @@ for fxx in fxx_list:
         save_path_6=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/850hPa wind MSLP"
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
-        ds_2 = H.xarray("UGRD:850")
-        ds_3 = H.xarray("VGRD:850")
+        ds_2 = H.xarray(":UGRD:850")
+        ds_3 = H.xarray(":VGRD:850")
         ds_4 = mpcalc.wind_speed(ds_2.u, ds_3.v)
         ds_mslp = H.xarray("PRMSL")
 
@@ -504,8 +504,8 @@ for fxx in fxx_list:
         save_path_7= r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/850hPa wind"
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
-        ds_2 = H.xarray("UGRD:850")
-        ds_3 = H.xarray("VGRD:850")
+        ds_2 = H.xarray(":UGRD:850")
+        ds_3 = H.xarray(":VGRD:850")
         ds_4 = mpcalc.wind_speed(ds_2.u, ds_3.v)
         ds_mslp = H.xarray("PRMSL")
 
@@ -590,10 +590,10 @@ for fxx in fxx_list:
         save_path_8=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/10m wind MSLP"
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
-        ds_2 = H.xarray("UGRD:10 m above_ground")
-        ds_3 = H.xarray("VGRD:10 m above_ground")
+        ds_2 = H.xarray(":UGRD:10 m above_ground")
+        ds_3 = H.xarray(":VGRD:10 m above_ground")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
-        ds_11 = H.xarray("PRMSL")
+        ds_11 = H.xarray("PRMSL:")
         ds_2 = ds_2.sel(latitude=slice(90, 0,3), longitude=slice(90, 180,3))
         ds_3 = ds_3.sel(latitude=slice(90, 0,3), longitude=slice(90, 180,3))
         ds_4 = ds_4.sel(latitude=slice(90, 0), longitude=slice(90, 180))
