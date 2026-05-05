@@ -587,7 +587,7 @@ for fxx in fxx_list:
         plt.close(fig)  
 
         print("所有圖片已全部生成！")
-        save_path_8=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/10m wind + MSLP"
+        save_path_8=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/10m wind MSLP"
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
         ds_2 = H.xarray("UGRD:10 m above_ground")
