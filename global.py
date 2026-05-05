@@ -643,7 +643,7 @@ for fxx in fxx_list:
         msl_contour = ax2.contour(
             ds_11.longitude,
             ds_11.latitude,
-            ds_11.msl/100,
+            ds_11.prmsl/100,
             levels=np.arange(800, 1100, 2),
             colors='black',
             transform=ccrs.PlateCarree()
