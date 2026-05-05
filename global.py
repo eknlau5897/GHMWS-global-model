@@ -590,8 +590,8 @@ for fxx in fxx_list:
         save_path_8=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/10m wind MSLP"
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
-        ds_2 = H.xarray(":UGRD:10 m above_ground")
-        ds_3 = H.xarray(":VGRD:10 m above_ground")
+        ds_2 = H.xarray(":UGRD:10 m above ground")
+        ds_3 = H.xarray(":VGRD:10 m above ground")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
         ds_11 = H.xarray("PRMSL:")
         ds_2 = ds_2.sel(latitude=slice(90, 0,3), longitude=slice(90, 180,3))
