@@ -359,7 +359,7 @@ for fxx in fxx_list:
         plt.close()
 
         print("所有圖片已全部生成！")
-        save_path_5=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/500hPa GH+MSLP"
+        save_path_5=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/500hPa GH MSLP"
         os.makedirs(save_path, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
@@ -415,7 +415,7 @@ for fxx in fxx_list:
         plt.savefig(save_full_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print("所有圖片已全部生成！")
-        save_path_6=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/850hPa wind+MSLP"
+        save_path_6=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/850hPa wind MSLP"
         H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
         ds_2 = H.xarray("UGRD:850")
