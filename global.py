@@ -760,8 +760,8 @@ for fxx in fxx_list:
         save_path_10=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/South China/850hPa wind MSLP"
         H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
-        ds_2 = H.xarray(":u:850")
-        ds_3 = H.xarray(":v:850")
+        ds_2 = H.xarray("u:850")
+        ds_3 = H.xarray("v:850")
         ds_4 = mpcalc.wind_speed(ds_2.u, ds_3.v)
         ds_mslp = H.xarray("msl")
 
