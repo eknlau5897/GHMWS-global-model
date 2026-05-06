@@ -773,7 +773,7 @@ for fxx in fxx_list:
 
         fig, ax = plt.subplots(figsize=(14, 14), constrained_layout=True,
                                subplot_kw={'projection': ccrs.PlateCarree()})
-        plot_background_2(ax2)
+        plot_background_2(ax)
 
         gradient_colors = [
             "#FFFFFF", "#F0F0F0", "#E0E0E0", "#D0D0D0",
@@ -848,7 +848,7 @@ for fxx in fxx_list:
         print(f"Fetching {run_str} FXX {fxx}...")
         H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
-        ds_gh = H.xarray(":gh:500")
+        ds_gh = H.xarray("z:500")
         ds_mslp = H.xarray("msl")
 
         ds_gh = ds_gh.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
