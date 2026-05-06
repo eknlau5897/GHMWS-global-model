@@ -854,7 +854,7 @@ for fxx in fxx_list:
         ds_gh = ds_gh.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
         ds_mslp = ds_mslp.sel(latitude=slice(90, 0), longitude=slice(90, 180))
     
-        gh_dagpm = ds_gh.gh  
+        gh_dagpm = ds_gh.z/9.81  
         mslp_hpa = ds_mslp.msl / 100
 
         fig, ax = plt.subplots(figsize=(14, 14), constrained_layout=True,
