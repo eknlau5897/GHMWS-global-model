@@ -675,10 +675,10 @@ for fxx in fxx_list:
         save_path_9=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/NWP/850hPa wind MSLP"
         H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
-        ds_2 = H.xarray(":u:850")
-        ds_3 = H.xarray(":v:850")
+        ds_2 = H.xarray("u:850")
+        ds_3 = H.xarray("v:850")
         ds_4 = mpcalc.wind_speed(ds_2.u, ds_3.v)
-        ds_mslp = H.xarray(":msl:")
+        ds_mslp = H.xarray("msl")
 
         ds_2 = ds_2.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
         ds_3 = ds_3.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
@@ -763,7 +763,7 @@ for fxx in fxx_list:
         ds_2 = H.xarray(":u:850")
         ds_3 = H.xarray(":v:850")
         ds_4 = mpcalc.wind_speed(ds_2.u, ds_3.v)
-        ds_mslp = H.xarray(":msl:")
+        ds_mslp = H.xarray("msl")
 
         ds_2 = ds_2.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
         ds_3 = ds_3.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
@@ -849,7 +849,7 @@ for fxx in fxx_list:
         H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
         ds_gh = H.xarray(":gh:500")
-        ds_mslp = H.xarray(":msl:")
+        ds_mslp = H.xarray("msl")
 
         ds_gh = ds_gh.sel(latitude=slice(90, 0,5), longitude=slice(90, 180,5))
         ds_mslp = ds_mslp.sel(latitude=slice(90, 0), longitude=slice(90, 180))
@@ -903,7 +903,7 @@ for fxx in fxx_list:
         save_path_12=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/South China/10m wind MSLP"
         os.makedirs(save_path_12, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
+        H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
         ds_2 = H.xarray(":10u:")
         ds_3 = H.xarray(":10v:")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
