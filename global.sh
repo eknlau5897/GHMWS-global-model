@@ -10,7 +10,7 @@ do
     CURRENT_HOUR=$(date -u +"%H")
     if [ "$CURRENT_HOUR" -lt 09 ]; then
         # Before 09 UTC, the 12z from yesterday is the safest "latest"
-        RUN_DATE=$(date -u -d "yesterday" +"%Y%m%d12")
+        RUN_DATE=$(date -u -v-1d +"%Y%m%d12")
     elif [ "$CURRENT_HOUR" -lt 21 ]; then
         # Between 09 and 21 UTC, try today's 00z
         RUN_DATE=$(date -u +"%Y%m%d00")
