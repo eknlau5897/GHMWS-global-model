@@ -24,15 +24,20 @@ do
     # 2. Run Python
     $PYTHON_CMD $SCRIPT_PATH $RUN_DATE
 
-    git add .
-    git commit -m "Auto update for $RUN_DATE"
-    git push origin main
+    PYTHON_STATUS=$?
+
     # 3. Check Result
-if [ $? -eq 0 ]; then
-    echo "Run $RUN_DATE complete. Sleeping for 3 hours..."
-    sleep 43200
-else
-    echo "Data for $RUN_DATE not ready yet. Retrying in 20 minutes..."
-    sleep 1200
-fi
+    if [ $PYTHON_STATUS -eq 0 ]; then
+        echo "Run $RUN_DATE complete. Updating Git..."
+        
+        git add .
+        git commit -m "Auto update for $RUN_DATE"
+        git push origin main
+        
+        echo "Sleeping for 12 hours..."
+        sleep 43200
+    else
+        echo "Error or data not ready for $RUN_DATE. Retrying in 10 minutes..."
+        sleep 600
+    fi
 done
