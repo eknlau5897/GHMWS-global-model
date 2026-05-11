@@ -36,8 +36,5 @@ do
         
         echo "Sleeping for 12 hours..."
         sleep 43200
-    else
-        echo "Error or data not ready for $RUN_DATE. Retrying in 10 minutes..."
-        sleep 600
     fi
 done
