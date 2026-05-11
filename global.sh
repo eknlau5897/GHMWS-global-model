@@ -36,5 +36,8 @@ do
         
         echo "Sleeping for 12 hours..."
         sleep 43200
+    else
+        echo "Run $RUN_DATE failed."
+        sleep 43200
     fi
 done
