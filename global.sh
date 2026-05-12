@@ -37,6 +37,10 @@ do
         echo "Sleeping for 12 hours..."
         sleep 43200
     else
+        git add .
+        git commit -m "Auto update for $RUN_DATE"
+        git push origin main
+        
         echo "Run $RUN_DATE failed."
         sleep 43200
     fi
