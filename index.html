@@ -1,0 +1,305 @@
+<!DOCTYPE html> 
+<html lang="zh-Hant"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>粵港澳天氣站 | 各大模式預報</title>
+    <link rel="icon" href="GHMWS.png" type="image/png">
+    
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
+     
+    <script> 
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0056b3',
+                        nav: '#007bff',
+                        darkBlue: '#0f172a',
+                    },
+                },
+            }
+        }
+    </script>
+     
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .model-card { @apply bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden; }
+            .model-img { @apply w-[85%] md:w-[75%] h-auto object-contain mx-auto rounded-lg; }
+            .control-btn { @apply w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-all shadow-md; }
+            .select-box { @apply bg-white border border-gray-300 px-5 py-3 rounded-lg cursor-pointer flex justify-between items-center text-lg font-medium; }
+            .select-dropdown { @apply absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden; }
+            .select-option { @apply px-5 py-3 hover:bg-primary/10 cursor-pointer transition-colors; }
+            .nav-link { @apply px-4 py-3 text-white hover:bg-white/20 transition-all block; }
+        }
+    </style>
+</head> 
+
+<body class="bg-gray-50 font-sans">
+    <header class="bg-white border-b border-gray-200 py-2 shadow-sm">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="GHMWS.png" class="w-16 h-16 object-contain">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-primary">粵港澳天氣站</h1>
+                    <p class="text-xs text-gray-500">Guangdong-Hong Kong-Macao Weather Station（GHMWS）</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-nav">
+        <div class="container mx-auto px-4">
+            <ul class="flex flex-wrap">
+                <li><a href="https://zax41006-bot.github.io/GHMWS/index.html" class="nav-link inline-block font-medium">首頁</a></li>
+               <li><a href="https://zax41006-bot.github.io/GHMWS-TC-GIS/" class="nav-link font-medium">熱帶氣旋資訊</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-realtime/index.html" class="nav-link inline-block font-medium">實況天氣</a></li>
+                <li><a href="index.html" class="nav-link font-medium">全球模式預報</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-meso-model/index.html" class="nav-link font-medium">中尺度模式預報</a></li>
+                <li><a href="https://zax41006-bot.github.io/GHMWS/ensemble.html" class="nav-link font-medium">集合模式預報</a></li>
+                <li><a href="https://eknlau5897.github.io/Earth_windy_2.0/demo/demo.html" class="nav-link font-medium">地球風場動畫2.0</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-nowcast/index.html" class="nav-link font-medium">臨近降雨預報</a></li>
+            </ul>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-6">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-1">數值模式預報</h2>
+            <p class="text-primary font-medium mt-1">自動更新（EC,GFS,AIFS)</p>
+        </div>
+
+        <div class="model-card relative">
+            <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+                <div class="relative">
+                    <div id="modelSelectBox" class="select-box">
+                        <span id="modelSelectText">ECMWF</span>
+                        <i class="fa fa-caret-down text-primary"></i>
+                    </div>
+                    <div id="modelDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-model="ecmwf">ECMWF</div>
+                        <div class="select-option" data-model="gfs">GFS</div>
+                        <div class="select-option" data-model="aifs">AIFS</div>
+                        <div class="select-option" data-model="pangu_weather">盤古-ECMWF AI模型（預留）</div>
+                        <div class="select-option" data-model="graphcast">Graphcast ECMWF（預留）</div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div id="regionSelectBox" class="select-box">
+                        <span id="regionSelectText">西北太平洋</span>
+                        <i class="fa fa-caret-down text-primary"></i>
+                    </div>
+                    <div id="regionDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-region="nwp">西北太平洋</div>
+                        <div class="select-option" data-region="south_china">中國南方</div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div id="varSelectBox" class="select-box">
+                        <span id="varSelectText">500hPa 位勢高度 + MSLP 海平面氣壓</span>
+                        <i class="fa fa-caret-down text-primary"></i>
+                    </div>
+                    <div id="varDropdown" class="select-dropdown hidden">
+                    </div>
+                </div>
+            </div>
+
+            <img id="modelImage" src="model/ECMWF/NWP/500hPa GH+MSLP/0.png" class="model-img" alt="模式預報">
+
+            <div class="flex justify-center items-center gap-5 mb-4 mt-5">
+                <button id="prevBtn" class="control-btn">
+                    <i class="fa fa-arrow-left"></i>
+                </button>
+                <button id="playBtn" class="control-btn">
+                    <i class="fa fa-play"></i>
+                </button>
+                <button id="nextBtn" class="control-btn">
+                    <i class="fa fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="model-card bg-blue-50 text-gray-700 p-4 mt-4">
+            <p class="font-bold mb-1 text-lg">ℹ️ 使用說明</p>
+            <p>• 三級選擇：模式 → 地區 → 氣象要素</p>
+            <p>• 切換地區會自動顯示該地區可用的參數</p>
+            <p>• 點擊「上一個/下一個」切換預報時效（0~240小時）</p>
+            <p>• 點擊「播放」自動輪播（每2秒切換）</p>
+            <p>• 資料僅供參考，請以官方發布為準</p>
+            <p>• ECMWF及GFS及AIFS每日更新兩次（00Z和12Z），盤古及Graphcast預留未上線</p>
+        </div>
+    </main>
+
+    <footer class="bg-primary text-white py-6 mt-10">
+        <div class="container mx-auto text-center text-sm opacity-80">
+            © 2026 粵港澳天氣站 版權所有
+        </div>
+    </footer>
+
+    <script>
+        const pathConfig = {
+            ecmwf: {
+                nwp: {
+                    "500hPa 位勢高度 + MSLP 海平面氣壓": "ECMWF/NWP/500hPa GH+MSLP/",
+                    "850hPa 風場 + MSLP 海平面氣壓": "ECMWF/NWP/850hPa wind+MSLP/"
+                },
+                south_china: {
+                    "10m 風場 + MSLP 海平面氣壓": "ECMWF/South China/10m wind + MSLP/",
+                    "850hPa風場": "ECMWF/South China/850hPa wind/"
+                }
+            },
+            gfs: {
+                nwp: {
+                    "500hPa GH+MSLP": "GFS/NWP/500hPa GH MSLP/",
+                    "850wind+MSLP": "GFS/NWP/850hPa wind MSLP/",
+                },
+                south_china:{
+                    "10m 風場及MSLP":"GFS/South China/10m wind MSLP/",
+                    "850hPa 風場":"GFS/South China/850hPa wind/"
+                }
+                },
+            aifs: {
+                nwp: {
+                    "500hPa GH+MSLP": "AIFS/NWP/500hPa GH MSLP/",
+                    "850hPa 風場+MSLP": "AIFS/NWP/850hPa wind MSLP/"
+                },
+                south_china:{
+                    "10m 風場及MSLP":"AIFS/South China/10m wind MSLP/",
+                    "850hPa 風場":"AIFS/South China/850hPa wind MSLP/"
+                }
+            },
+            pangu_weather:{
+                nwp:{
+                    "10m 風場及MSLP":"Pangu weather/wp/10m_wind_mslp/"
+                }
+            },
+            graphcast:{
+                nwp:{
+                    "10m 風場及MSLP":"Graphcast/wp/10m_wind_mslp/"
+                }
+            }
+        };
+
+        const fxxList = [0,6,12,18,24,30,36,42, 48,54,60,66,72,78,84,90, 96,102,108,114, 120,126,132,138,144,150,156,162, 168,174,180, 192,204, 216,228, 240];
+        let currentFxx = 0;
+        let currentModel = "ecmwf";
+        let currentRegion = "nwp";
+        let currentVar = "500hPa GH+MSLP";
+        let autoPlay;
+
+        const img = document.getElementById("modelImage");
+        const modelSelectText = document.getElementById("modelSelectText");
+        const regionSelectText = document.getElementById("regionSelectText");
+        const varSelectText = document.getElementById("varSelectText");
+        const varDropdown = document.getElementById("varDropdown");
+
+        function updateVarList() {
+            varDropdown.innerHTML = "";
+            const vars = pathConfig[currentModel][currentRegion];
+            
+            for (let v in vars) {
+                let div = document.createElement("div");
+                div.className = "select-option";
+                div.dataset.var = v;
+                div.innerText = v;
+                varDropdown.appendChild(div);
+            }
+
+            currentVar = Object.keys(vars)[0];
+            varSelectText.innerText = currentVar;
+            updateImage();
+        }
+
+        function updateImage() {
+            const path = pathConfig[currentModel][currentRegion][currentVar];
+            img.src = path + currentFxx + ".png";
+        }
+
+        document.getElementById("modelSelectBox").addEventListener("click", () => {
+            document.getElementById("modelDropdown").classList.toggle("hidden");
+        });
+        document.querySelectorAll("#modelDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
+                currentModel = option.dataset.model;
+                modelSelectText.innerText = option.innerText;
+                document.getElementById("modelDropdown").classList.add("hidden");
+                currentFxx = 0;
+                updateVarList();
+            });
+        });
+
+        document.getElementById("regionSelectBox").addEventListener("click", () => {
+            document.getElementById("regionDropdown").classList.toggle("hidden");
+        });
+        document.querySelectorAll("#regionDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
+                currentRegion = option.dataset.region;
+                regionSelectText.innerText = option.innerText;
+                document.getElementById("regionDropdown").classList.add("hidden");
+                currentFxx = 0;
+                updateVarList(); 
+            });
+        });
+
+        document.getElementById("varSelectBox").addEventListener("click", () => {
+            document.getElementById("varDropdown").classList.toggle("hidden");
+        });
+        document.addEventListener("click", (e) => {
+            if (e.target && e.target.classList.contains("select-option") && e.target.dataset.var) {
+                currentVar = e.target.dataset.var;
+                varSelectText.innerText = currentVar;
+                document.getElementById("varDropdown").classList.add("hidden");
+                currentFxx = 0;
+                updateImage();
+            }
+        });
+
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            let idx = fxxList.indexOf(currentFxx);
+            idx = (idx - 1 + fxxList.length) % fxxList.length;
+            currentFxx = fxxList[idx];
+            updateImage();
+            stopPlay();
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            let idx = fxxList.indexOf(currentFxx);
+            idx = (idx + 1) % fxxList.length;
+            currentFxx = fxxList[idx];
+            updateImage();
+            stopPlay();
+        });
+
+        function stopPlay() {
+            clearInterval(autoPlay);
+            document.getElementById("playBtn").innerHTML = '<i class="fa fa-play"></i>';
+        }
+
+        document.getElementById("playBtn").addEventListener("click", () => {
+            if (autoPlay) {
+                stopPlay();
+            } else {
+                document.getElementById("playBtn").innerHTML = '<i class="fa fa-pause"></i>';
+                autoPlay = setInterval(() => {
+                    let idx = fxxList.indexOf(currentFxx);
+                    idx = (idx + 1) % fxxList.length;
+                    currentFxx = fxxList[idx];
+                    updateImage();
+                }, 2000);
+            }
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!document.getElementById("modelSelectBox").contains(e)) document.getElementById("modelDropdown").classList.add("hidden");
+            if (!document.getElementById("regionSelectBox").contains(e)) document.getElementById("regionDropdown").classList.add("hidden");
+            if (!document.getElementById("varSelectBox").contains(e)) document.getElementById("varDropdown").classList.add("hidden");
+        });
+
+        updateVarList();
+    </script>
+</body>
+</html>
