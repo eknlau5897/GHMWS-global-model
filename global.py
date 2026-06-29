@@ -977,7 +977,7 @@ for fxx in fxx_list:
         init_CST = (pd.to_datetime(ds_2.time.values) + pd.Timedelta(hours=8)).strftime('%H:%M CST/HKT/MST %d %b %Y')
 
         fig.suptitle(
-            f"ECMWF: 0.25 degree resolution\nValid: {valid_UTC} or {valid_CST}\ninitialized at {init_UTC} or {init_CST}\nforecast hour:{fxx}\nPlotted by GHMWS",
+            f"AIFS: 0.25 degree resolution\nValid: {valid_UTC} or {valid_CST}\ninitialized at {init_UTC} or {init_CST}\nforecast hour:{fxx}\nPlotted by GHMWS",
             color='red', fontsize=16
         )
 
