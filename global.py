@@ -988,7 +988,7 @@ for fxx in fxx_list:
         print("所有圖片已全部生成！")
     except Exception as e:
         print(f"Error at FXX {fxx}: {e}")
-        sys.exit(1) # Tell Shell script that data isn't ready yet
+        # sys.exit(1) <-- Remove or comment this out
+        continue     # <-- Add this to skip to the next fxx item
 
-    print("Success")
-sys.exit(0)
+    print(f"Success for FXX {fxx}")
