@@ -25,7 +25,9 @@ fi
 echo "Targeting Run: $RUN_DATE"
 
 # 2. Run Python
-python $SCRIPT_PATH $RUN_DATE
+python - <<'EOF'
+$SCRIPT_PATH $RUN_DATE
+EOF
 PYTHON_STATUS=$?
 
 # 3. Check Result and Sync Git
