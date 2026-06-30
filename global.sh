@@ -2,7 +2,7 @@
 
 # Define absolute paths and change to your working directory
 PROJECT_DIR="/Users/eknlau/VS_code/GHMWS"
-PYTHON_CMD="python3.11"
+PYTHON_CMD="python"
 SCRIPT_PATH="./global.py"
 
 cd "$PROJECT_DIR" || exit 1
