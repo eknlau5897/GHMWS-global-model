@@ -1,7 +1,7 @@
 #!/bin/bash
 PROJECT_DIR="/Users/eknlau/VS_code/GHMWS"
-PYTHON_CMD="python"
-SCRIPT_NAME="global.py"
+PYTHON_CMD="/opt/anaconda3/bin/python"
+SCRIPT_NAME="/Users/eknlau/VS_code/GHMWS-global-model/global.py"
 
 cd "$PROJECT_DIR" || exit 1
 echo "=== GHMWS Cron Execution Started: $(date) ==="
