@@ -6,7 +6,6 @@ import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from ecmwf.opendata import Client
-import earthkit.data
 from datetime import datetime
 from herbie import Herbie
 import numpy as np
