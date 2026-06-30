@@ -25,7 +25,7 @@ fi
 echo "Targeting Run: $RUN_DATE"
 
 # 2. Run Python
-python3.11 $SCRIPT_PATH $RUN_DATE
+python $SCRIPT_PATH $RUN_DATE
 PYTHON_STATUS=$?
 
 # 3. Check Result and Sync Git
