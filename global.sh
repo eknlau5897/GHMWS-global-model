@@ -1,6 +1,6 @@
 #!/bin/bash
 PROJECT_DIR="/Users/eknlau/VS_code/GHMWS"
-PYTHON_CMD="python3.11"
+PYTHON_CMD="python"
 SCRIPT_NAME="global.py"
 
 cd "$PROJECT_DIR" || exit 1
