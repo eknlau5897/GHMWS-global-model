@@ -52,7 +52,7 @@ for fxx in fxx_list:
             return ax2
         
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="ifs", product="oper", fxx=fxx)
 
         ds_2 = H.xarray(":u:850")
         ds_3 = H.xarray(":v:850")
@@ -141,7 +141,7 @@ for fxx in fxx_list:
         os.makedirs(save_path_2, exist_ok=True)
 
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="ifs", product="oper", fxx=fxx)
 
         ds_2 = H.xarray(":u:850")
         ds_3 = H.xarray(":v:850")
@@ -219,7 +219,7 @@ for fxx in fxx_list:
         save_path_3=r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/NWP/500hPa GH+MSLP"
         os.makedirs(save_path, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="ifs", product="oper", fxx=fxx)
 
         ds_gh = H.xarray(":gh:500")
         ds_mslp = H.xarray(":msl:")
@@ -276,7 +276,7 @@ for fxx in fxx_list:
         save_path_4=r"/Users/eknlau/VS_code/GHMWS-global-model/ECMWF/South China/10m wind + MSLP"
         os.makedirs(save_path_4, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="ifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="ifs", product="oper", fxx=fxx)
         ds_2 = H.xarray(":10u:")
         ds_3 = H.xarray(":10v:")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
@@ -362,7 +362,7 @@ for fxx in fxx_list:
         save_path_5=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/500hPa GH MSLP"
         os.makedirs(save_path, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
+        H = herbie.Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
         ds_gh = H.xarray(":HGT:500")
         ds_mslp = H.xarray(":PRMSL:")
@@ -416,7 +416,7 @@ for fxx in fxx_list:
         plt.close(fig)
         print("所有圖片已全部生成！")
         save_path_6=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/NWP/850hPa wind MSLP"
-        H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
+        H = herbie.Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
         ds_2 = H.xarray(":UGRD:850")
         ds_3 = H.xarray(":VGRD:850")
@@ -502,7 +502,7 @@ for fxx in fxx_list:
 
         print("所有圖片已全部生成！")
         save_path_7= r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/850hPa wind"
-        H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
+        H = herbie.Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
 
         ds_2 = H.xarray(":UGRD:850")
         ds_3 = H.xarray(":VGRD:850")
@@ -589,7 +589,7 @@ for fxx in fxx_list:
         print("所有圖片已全部生成！")
         save_path_8=r"/Users/eknlau/VS_code/GHMWS-global-model/GFS/South China/10m wind MSLP"
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
+        H = herbie.Herbie(run_str, model="gfs", product="pgrb2.0p25", fxx=fxx)
         ds_2 = H.xarray(":UGRD:10 m above ground")
         ds_3 = H.xarray(":VGRD:10 m above ground")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
@@ -673,7 +673,7 @@ for fxx in fxx_list:
 
         print("所有圖片已全部生成！")
         save_path_9=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/NWP/850hPa wind MSLP"
-        H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
         ds_2 = H.xarray("u:850")
         ds_3 = H.xarray("v:850")
@@ -758,7 +758,7 @@ for fxx in fxx_list:
         plt.close(fig)  
         print("所有圖片已全部生成！")
         save_path_10=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/South China/850hPa wind MSLP"
-        H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
         ds_2 = H.xarray("u:850")
         ds_3 = H.xarray("v:850")
@@ -846,7 +846,7 @@ for fxx in fxx_list:
         save_path_11=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/NWP/500hPa GH MSLP"
         os.makedirs(save_path_11, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="aifs", product="oper", fxx=fxx)
 
         ds_gh = H.xarray("z:500")
         ds_mslp = H.xarray("msl")
@@ -903,7 +903,7 @@ for fxx in fxx_list:
         save_path_12=r"/Users/eknlau/VS_code/GHMWS-global-model/AIFS/South China/10m wind MSLP"
         os.makedirs(save_path_12, exist_ok=True)
         print(f"Fetching {run_str} FXX {fxx}...")
-        H = Herbie(run_str, model="aifs", product="oper", fxx=fxx)
+        H = herbie.Herbie(run_str, model="aifs", product="oper", fxx=fxx)
         ds_2 = H.xarray(":10u:")
         ds_3 = H.xarray(":10v:")
         ds_4 = mpcalc.wind_speed(ds_2.u10, ds_3.v10)
