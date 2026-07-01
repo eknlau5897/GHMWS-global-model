@@ -31,6 +31,6 @@ fi
 
 git add .
 git commit -m "Auto update maps for Run $RUN_DATE"
-git push origin main
+git push origin main --force
 
 echo "=== GHMWS Cron Execution Finished ==="
