@@ -5,7 +5,6 @@ set -e
 # INITIAL ENVIRONMENT SETUP
 # ==============================================================================
 # Prevent the Mac from sleeping as long as this script process is alive
-caffeinate -dimsu -w $$ &
 
 # Expose system paths so background processes can find git, curl, and python
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin"
