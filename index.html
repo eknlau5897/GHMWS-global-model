@@ -232,6 +232,7 @@
       color: var(--text-muted);
       font-size: 1rem;
       text-align: center;
+      padding: 0 20px;
     }
 
     @media (max-width: 768px) {
@@ -325,16 +326,19 @@
     const fxxSlider = document.getElementById('fxx-slider');
     const fxxBadge = document.getElementById('fxx-badge');
 
-    // Load Pyodide and download GeoJSON coastlines
+    // Load Pyodide and required GeoGIS packages
     async function initPyodide() {
       try {
         pyodide = await loadPyodide();
-        await pyodide.loadPackage(["matplotlib", "numpy", "geopandas"]);
+        // Load shapely and pyproj alongside geopandas to ensure clipping & spatial joins work properly
+        await pyodide.loadPackage(["matplotlib", "numpy", "shapely", "pyproj", "geopandas"]);
 
         loadingText.textContent = "Fetching World Coastlines & GeoJSON Borders...";
 
-        // Fetch Natural Earth 110m land vector shapes
+        // Fetch GeoJSON land polygons
         const geoJsonResponse = await fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson");
+        if (!geoJsonResponse.ok) throw new Error("Failed to download map vectors");
+        
         const geoJsonData = await geoJsonResponse.text();
         pyodide.FS.writeFile("land.geojson", geoJsonData);
 
@@ -342,9 +346,10 @@
         pyStatus.style.color = "#10b981";
         renderPythonPlot();
       } catch (err) {
+        console.error("Initialization Error:", err);
         pyStatus.textContent = "初始化失敗";
         pyStatus.style.color = "#ef4444";
-        loadingText.textContent = "Error loading GeoJSON Cartopy environment.";
+        loadingText.textContent = "Error loading Pyodide or GeoJSON map vectors.";
       }
     }
 
@@ -367,105 +372,112 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
-import io, base64, gc
+from shapely.geometry import box
+import io, base64, gc, traceback
 
-model = "${model}"
-region = "${region}"
-param = "${param}"
-fxx = ${fxx}
+try:
+    model = "${model}"
+    region = "${region}"
+    param = "${param}"
+    fxx = ${fxx}
 
-extents = {
-    "south_china": [105, 122, 18, 26],
-    "east_asia": [95, 145, 15, 55],
-    "nw_pacific": [105, 165, 20, 60]
-}
-extent = extents.get(region, [105, 165, 20, 60])
+    extents = {
+        "south_china": [105.0, 122.0, 18.0, 26.0],
+        "east_asia": [95.0, 145.0, 15.0, 55.0],
+        "nw_pacific": [105.0, 165.0, 20.0, 60.0]
+    }
+    extent = extents.get(region, [105.0, 165.0, 20.0, 60.0])
 
-# Generate Grid Arrays
-lons = np.linspace(extent[0], extent[1], 120)
-lats = np.linspace(extent[2], extent[3], 90)
-LON, LAT = np.meshgrid(lons, lats)
+    # 1. Grid Arrays
+    lons = np.linspace(extent[0], extent[1], 120)
+    lats = np.linspace(extent[2], extent[3], 90)
+    LON, LAT = np.meshgrid(lons, lats)
 
-fig, ax = plt.subplots(figsize=(10, 7), dpi=130, facecolor='#111827')
-ax.set_facecolor('#0b0f19')
+    fig, ax = plt.subplots(figsize=(10, 7), dpi=130, facecolor='#111827')
+    ax.set_facecolor('#0b0f19')
 
-# --- 1. Meteorological Field Calculations ---
-if param == "500hpa_mslp":
-    hgt = 540 + 40 * np.sin(np.radians(LON*2 + fxx*0.05)) * np.cos(np.radians(LAT*1.5)) - (fxx * 0.08)
-    mslp = 1012 + 20 * np.cos(np.radians(LON*2.5 - fxx*0.04)) * np.sin(np.radians(LAT*2))
+    # 2. Field Calculations
+    if param == "500hpa_mslp":
+        hgt = 540 + 40 * np.sin(np.radians(LON*2 + fxx*0.05)) * np.cos(np.radians(LAT*1.5)) - (fxx * 0.08)
+        mslp = 1012 + 20 * np.cos(np.radians(LON*2.5 - fxx*0.04)) * np.sin(np.radians(LAT*2))
 
-    cf = ax.contourf(LON, LAT, hgt, levels=np.arange(500, 600, 4), cmap="YlOrRd")
-    cs = ax.contour(LON, LAT, mslp, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.0)
-    ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
-    title_text = "500hPa Geopotential Height (dagpm) + MSLP (hPa)"
+        cf = ax.contourf(LON, LAT, hgt, levels=np.arange(500, 600, 4), cmap="YlOrRd")
+        cs = ax.contour(LON, LAT, mslp, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.0)
+        ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
+        title_text = "500hPa Geopotential Height (dagpm) + MSLP (hPa)"
 
-elif param == "850hpa_wind":
-    u = (15 + fxx*0.02) * np.cos(np.radians(LAT * 3 + fxx*0.1))
-    v = (15 + fxx*0.02) * np.sin(np.radians(LON * 2.5))
-    speed = np.sqrt(u**2 + v**2) * 1.94
+    elif param == "850hpa_wind":
+        u = (15 + fxx*0.02) * np.cos(np.radians(LAT * 3 + fxx*0.1))
+        v = (15 + fxx*0.02) * np.sin(np.radians(LON * 2.5))
+        speed = np.sqrt(u**2 + v**2) * 1.94
 
-    cf = ax.contourf(LON, LAT, speed, levels=np.arange(10, 75, 5), cmap="YlGnBu")
-    plt.colorbar(cf, ax=ax, orientation="horizontal", pad=0.05, shrink=0.7, label="Wind Speed (kts)")
-    
-    skip = 6
-    ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u[::skip, ::skip], v[::skip, ::skip], color='white', scale=300)
-    title_text = "850hPa Wind Speed & Vectors (kts)"
+        cf = ax.contourf(LON, LAT, speed, levels=np.arange(10, 75, 5), cmap="YlGnBu")
+        plt.colorbar(cf, ax=ax, orientation="horizontal", pad=0.05, shrink=0.7, label="Wind Speed (kts)")
+        
+        skip = 6
+        ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u[::skip, ::skip], v[::skip, ::skip], color='white', scale=300)
+        title_text = "850hPa Wind Speed & Vectors (kts)"
 
-elif param == "10m_wind_mslp":
-    u10 = 10 * np.cos(np.radians(LAT * 4 + fxx*0.08))
-    v10 = 10 * np.sin(np.radians(LON * 3))
-    speed10 = np.sqrt(u10**2 + v10**2) * 1.94
-    mslp = 1012 + 18 * np.cos(np.radians(LON*2 - fxx*0.05))
+    elif param == "10m_wind_mslp":
+        u10 = 10 * np.cos(np.radians(LAT * 4 + fxx*0.08))
+        v10 = 10 * np.sin(np.radians(LON * 3))
+        speed10 = np.sqrt(u10**2 + v10**2) * 1.94
+        mslp = 1012 + 18 * np.cos(np.radians(LON*2 - fxx*0.05))
 
-    cf = ax.contourf(LON, LAT, speed10, levels=np.arange(10, 60, 5), cmap="Spectral_r")
-    cs = ax.contour(LON, LAT, mslp, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.2)
-    ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
-    
-    skip = 6
-    ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u10[::skip, ::skip], v10[::skip, ::skip], color='black', scale=250)
-    title_text = "10m Surface Wind (kts) + MSLP (hPa)"
+        cf = ax.contourf(LON, LAT, speed10, levels=np.arange(10, 60, 5), cmap="Spectral_r")
+        cs = ax.contour(LON, LAT, mslp, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.2)
+        ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
+        
+        skip = 6
+        ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u10[::skip, ::skip], v10[::skip, ::skip], color='black', scale=250)
+        title_text = "10m Surface Wind (kts) + MSLP (hPa)"
 
-# --- 2. Cartopy Fix: Set CRS and Clip to Extent Bounding Box ---
-world = gpd.read_file("land.geojson")
+    # 3. Vector Map Coastline Rendering
+    world = gpd.read_file("land.geojson")
+    if world.crs is None:
+        world.set_crs(epsg=4326, inplace=True)
 
-if world.crs is None:
-    world.set_crs(epsg=4326, inplace=True)
+    # Use Shapely box geometry for clipping region bounds cleanly
+    bbox = box(extent[0], extent[2], extent[1], extent[3])
+    world_clipped = gpd.clip(world, bbox)
+    world_clipped.boundary.plot(ax=ax, color="black", linewidth=0.9, zorder=5)
 
-# Bounding box tuple: (min_lon, min_lat, max_lon, max_lat)
-bbox = (extent[0], extent[2], extent[1], extent[3])
-world_clipped = gpd.clip(world, bbox)
-world_clipped.boundary.plot(ax=ax, color="black", linewidth=0.9, zorder=5)
+    # 4. Extent and Styling
+    ax.set_xlim(extent[0], extent[1])
+    ax.set_ylim(extent[2], extent[3])
+    ax.grid(True, linestyle='--', alpha=0.5, color='gray')
+    ax.tick_params(colors='white')
 
-# --- 3. Gridlines and Bounds Alignment ---
-ax.set_xlim(extent[0], extent[1])
-ax.set_ylim(extent[2], extent[3])
-ax.grid(True, linestyle='--', alpha=0.5, color='gray')
-ax.tick_params(colors='white')
+    prod_label = "product='oper'" if model in ["ecmwf", "aifs"] else ("product='pgrb2.0p25'" if model == "gfs" else "product='graphcast'")
+    header_str = f"{model.upper()} ({prod_label}) | Domain: {region.upper()}\\nForecast Hour: +{fxx:03d}h / 240h | Cartopy Geo-Engine\\n{title_text}"
+    plt.suptitle(header_str, color='#ef4444', fontsize=10, fontweight='bold', y=0.98)
 
-# Set model operational tag
-prod_label = "product='oper'" if model in ["ecmwf", "aifs"] else ("product='pgrb2.0p25'" if model == "gfs" else "product='graphcast'")
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', facecolor=fig.get_facecolor())
+    plt.clf()
+    plt.close('all')
+    gc.collect()
 
-header_str = f"{model.upper()} ({prod_label}) | Domain: {region.upper()}\\nForecast Hour: +{fxx:03d}h / 240h | Cartopy Geo-Engine\\n{title_text}"
-plt.suptitle(header_str, color='#ef4444', fontsize=10, fontweight='bold', y=0.98)
+    'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
 
-# Save to Base64 String and Clean Memory
-buf = io.BytesIO()
-plt.savefig(buf, format='png', bbox_inches='tight', facecolor=fig.get_facecolor())
-plt.clf()
-plt.close('all')
-gc.collect()
-
-'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
+except Exception as e:
+    traceback.print_exc()
+    "ERROR: " + str(e)
 `;
 
       try {
-        const imgDataUrl = await pyodide.runPythonAsync(pythonScript);
-        weatherMap.src = imgDataUrl;
-        weatherMap.style.display = "block";
-        loadingText.style.display = "none";
+        const result = await pyodide.runPythonAsync(pythonScript);
+        if (typeof result === "string" && result.startsWith("ERROR:")) {
+          loadingText.textContent = `Python Exec Error: ${result}`;
+          console.error(result);
+        } else {
+          weatherMap.src = result;
+          weatherMap.style.display = "block";
+          loadingText.style.display = "none";
+        }
       } catch (err) {
-        console.error("Pyodide Error:", err);
-        loadingText.textContent = "Error rendering frame.";
+        console.error("Pyodide Runner Error:", err);
+        loadingText.textContent = "Error rendering frame. Check F12 browser console.";
       }
     }
 
