@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數值模式預報 - 香港氣象追擊網 HKMETC</title>
+  <title>數值模式預報 (Client-Side Pyodide Plotter) - HKMETC</title>
+  
+  <!-- Load Pyodide WebAssembly Python Engine -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
   <style>
-    /* Dark Theme Palette matching HKMETC UI */
     :root {
       --bg-color: #0b0f19;
       --card-bg: #111827;
@@ -23,7 +26,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
     body {
@@ -36,7 +39,6 @@
       padding-bottom: 40px;
     }
 
-    /* Top Navigation Header */
     header {
       width: 100%;
       background-color: #0d121f;
@@ -45,7 +47,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
     .brand {
@@ -57,7 +58,6 @@
     .brand-title {
       font-size: 1.05rem;
       font-weight: 700;
-      letter-spacing: 0.5px;
     }
 
     .brand-tag {
@@ -66,7 +66,6 @@
       font-size: 0.75rem;
       padding: 2px 6px;
       border-radius: 4px;
-      border: 1px solid #2d3748;
     }
 
     nav {
@@ -78,10 +77,9 @@
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.88rem;
-      transition: color 0.2s ease;
     }
 
-    nav a:hover, nav a.active {
+    nav a.active {
       color: var(--text-main);
       font-weight: 600;
     }
@@ -101,10 +99,8 @@
       background-color: var(--accent-green);
       border-radius: 50%;
       display: inline-block;
-      box-shadow: 0 0 8px var(--accent-green);
     }
 
-    /* Main Dashboard Layout */
     main {
       width: 100%;
       max-width: 1100px;
@@ -121,8 +117,7 @@
 
     .title-section h1 {
       font-size: 1.8rem;
-      letter-spacing: 1.5px;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
     }
 
     .title-section p {
@@ -130,7 +125,6 @@
       font-size: 0.85rem;
     }
 
-    /* Dashboard Container Card */
     .dashboard-panel {
       width: 100%;
       background-color: var(--card-bg);
@@ -140,10 +134,8 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
 
-    /* Selectors Grid */
     .control-bar {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -164,12 +156,6 @@
       font-size: 0.92rem;
       appearance: none;
       outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-
-    .select-wrapper select:focus {
-      border-color: var(--accent-color);
     }
 
     .select-wrapper::after {
@@ -183,7 +169,6 @@
       pointer-events: none;
     }
 
-    /* Timeline & Playback Bar */
     .timeline-bar {
       display: flex;
       align-items: center;
@@ -202,18 +187,11 @@
       padding: 6px 14px;
       font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn:hover {
-      background-color: #2d3748;
-      border-color: var(--accent-color);
     }
 
     .timeline-slider {
       flex: 1;
       accent-color: var(--accent-color);
-      cursor: pointer;
     }
 
     .fxx-badge {
@@ -224,103 +202,63 @@
       text-align: right;
     }
 
-    /* Map Display Box */
     .plot-container {
       width: 100%;
-      background-color: #000000;
+      background-color: #000;
       border-radius: 6px;
       border: 1px solid var(--border-color);
-      overflow: hidden;
+      min-height: 520px;
       display: flex;
       justify-content: center;
       align-items: center;
       position: relative;
-      min-height: 520px;
     }
 
-    /* Image or Canvas fallback */
     .plot-container img {
       width: 100%;
       height: auto;
       display: block;
-      object-fit: contain;
     }
 
-    canvas {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-    }
-
-    /* Floating Overlay Header on Canvas */
-    .map-overlay-title {
+    .loading-overlay {
       position: absolute;
-      top: 15px;
-      left: 50%;
-      transform: translateX(-50%);
+      color: var(--text-muted);
+      font-size: 1rem;
       text-align: center;
-      color: #dc2626;
-      font-weight: bold;
-      font-size: 0.82rem;
-      line-height: 1.35;
-      text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    @media (max-width: 768px) {
-      .control-bar {
-        grid-template-columns: 1fr;
-      }
-      nav {
-        display: none;
-      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
   <header>
     <div class="brand">
       <span class="brand-title">香港氣象追擊網</span>
       <span class="brand-tag">HKMETC</span>
     </div>
     <nav>
-      <a href="#">首頁</a>
-      <a href="#">熱帶氣旋資訊</a>
-      <a href="#">實況天氣</a>
       <a href="#" class="active">全球模式預報</a>
-      <a href="#">中尺度模式預報</a>
-      <a href="#">集合模式預報</a>
       <a href="#">地球風場動畫 2.0</a>
-      <a href="#">臨近降雨預報</a>
     </nav>
-    <div class="status-badge">系統運作正常</div>
+    <div class="status-badge" id="py-status">Initializing Python...</div>
   </header>
 
-  <!-- Main Container -->
   <main>
     <div class="title-section">
-      <h1>數值模式預報</h1>
-      <p>自動更新 (EC, GFS, AIFS, AIGFS)</p>
+      <h1>數值模式預報 (Pyodide Engine)</h1>
+      <p>In-Browser Python Matplotlib Plotter</p>
     </div>
 
     <div class="dashboard-panel">
-      <!-- Dropdown Control Grid -->
       <div class="control-bar">
-        <!-- Model Selection -->
         <div class="select-wrapper">
-          <select id="model-select">
-            <option value="ecmwf">ECMWF (IFS - 物理模式)</option>
-            <option value="aifs">AIFS (ECMWF - AI 模式)</option>
-            <option value="gfs">GFS (NCEP - 物理模式)</option>
-            <option value="aigfs">AIGFS (NOAA - AI 模式)</option>
-          </select>
+            <select id="model-select">
+                <option value="ecmwf">ECMWF (IFS - product='oper')</option>
+                <option value="aifs">AIFS (ECMWF AI - product='oper')</option>
+                <option value="gfs">GFS (NCEP - product='pgrb2.0p25')</option>
+                <option value="aigfs">AIGFS (NOAA AI - product='graphcast')</option>
+            </select>
         </div>
 
-        <!-- Regional Domain Selection -->
         <div class="select-wrapper">
           <select id="region-select">
             <option value="south_china">華南地區 (South China)</option>
@@ -329,17 +267,15 @@
           </select>
         </div>
 
-        <!-- Parameter Selection -->
         <div class="select-wrapper">
           <select id="parameter-select">
             <option value="500hpa_mslp">500hPa 位勢高度 + MSLP 海平面氣壓</option>
-            <option value="850hpa_wind">850hPa 風場 (850hPa Wind Vectors)</option>
-            <option value="10m_wind_mslp">10m 近地面風場 + MSLP</option>
+            <option value="850hpa_wind">850hPa 風場 (Wind Vectors & Speed)</option>
+            <option value="10m_wind_mslp">10m 風場 + MSLP 海平面氣壓</option>
           </select>
         </div>
       </div>
 
-      <!-- Timeline & Forecast Hour Animation Bar -->
       <div class="timeline-bar">
         <button id="play-btn" class="btn">▶ 播放</button>
         <button id="prev-btn" class="btn">❮ 上一張</button>
@@ -348,149 +284,245 @@
         <div id="fxx-badge" class="fxx-badge">+00h</div>
       </div>
 
-      <!-- Weather Map Frame -->
       <div class="plot-container">
-        <!-- Dynamically overlay text matching HKMETC reference format -->
-        <div id="map-header" class="map-overlay-title"></div>
-        
-        <!-- Displays rendered static PNG from GitHub Actions or falls back to canvas preview -->
-        <img id="weather-map" src="./plots/ecmwf_500hpa_mslp_nw_pacific_f00.png" alt="Weather Plot" onerror="renderCanvasFallback()">
-        <canvas id="fallback-canvas" width="1000" height="700" style="display:none;"></canvas>
+        <div id="loading" class="loading-overlay">Loading WebAssembly Python Engine...</div>
+        <img id="weather-map" style="display:none;" />
       </div>
     </div>
   </main>
 
   <script>
-    // DOM Element References
+    let pyodide = null;
+    let isPlaying = false;
+    let playInterval = null;
+
+    const pyStatus = document.getElementById('py-status');
+    const loadingText = document.getElementById('loading');
+    const weatherMap = document.getElementById('weather-map');
+
     const modelSelect = document.getElementById('model-select');
     const regionSelect = document.getElementById('region-select');
     const paramSelect = document.getElementById('parameter-select');
     const fxxSlider = document.getElementById('fxx-slider');
     const fxxBadge = document.getElementById('fxx-badge');
-    const weatherMap = document.getElementById('weather-map');
-    const fallbackCanvas = document.getElementById('fallback-canvas');
-    const mapHeader = document.getElementById('map-header');
-    const playBtn = document.getElementById('play-btn');
 
-    let isPlaying = false;
-    let playInterval = null;
+    // Load Pyodide WebAssembly runtime
+    async function initPyodide() {
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage(["matplotlib", "numpy"]);
+      pyStatus.textContent = "系統運作正常 (Pyodide Active)";
+      pyStatus.style.color = "#10b981";
+      renderPythonPlot();
+    }
 
-    // Updates image source URL matching the automated Python batch naming scheme
-    function updatePlot() {
+    async function renderPythonPlot() {
+      if (!pyodide) return;
+
       const model = modelSelect.value;
       const region = regionSelect.value;
       const param = paramSelect.value;
-      const fxxVal = parseInt(fxxSlider.value, 10);
-      const fxxStr = String(fxxVal).padStart(2, '0');
+      const fxx = parseInt(fxxSlider.value, 10);
+      const fxxStr = String(fxx).padStart(2, '0');
 
       fxxBadge.textContent = `+${fxxStr}h`;
+      loadingText.style.display = "block";
+      loadingText.textContent = `Plotting ${model} | ${param} | +${fxxStr}h...`;
 
-      // Construct file path generated by GitHub Actions execution
-      const imagePath = `./plots/${model}_${param}_${region}_f${fxxStr}.png`;
-      
-      // Update image display
+      // Python execution script producing all 3 plot variants
+      const pythonScript = `
+import os
+import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from herbie import Herbie
+
+PLOTS_DIR = "plots"
+os.makedirs(PLOTS_DIR, exist_ok=True)
+
+CYCLE_DATE = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).strftime("%Y-%m-%d 12:00")
+
+DOMAINS = {
+    "south_china": [105, 122, 18, 26],
+    "east_asia": [95, 145, 15, 55],
+    "nw_pacific": [105, 165, 20, 60]
+}
+
+def create_base_map(domain_key):
+    fig = plt.figure(figsize=(12, 9), dpi=150)
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.set_extent(DOMAINS[domain_key], crs=ccrs.PlateCarree())
+
+    scale = "10m" if domain_key == "south_china" else "50m"
+    ax.add_feature(cfeature.COASTLINE.with_scale(scale), linewidth=0.8, edgecolor="black")
+    ax.add_feature(cfeature.BORDERS.with_scale(scale), linewidth=0.5, edgecolor="black")
+
+    gl = ax.gridlines(draw_labels=True, linewidth=0.3, color='gray', alpha=0.5, linestyle='--')
+    gl.top_labels, gl.right_labels = False, True
+    return fig, ax
+
+def fetch_herbie_ds(model, fxx, search_pattern):
+    """Dynamically sets model and product for Herbie."""
+    model_lower = model.lower()
+    
+    # Configure model and product parameters correctly
+    if model_lower == "gfs":
+        product = "pgrb2.0p25"
+    elif model_lower == "aigfs":
+        product = "graphcast"
+    elif model_lower in ["ecmwf", "aifs"]:
+        product = "oper"  # ECMWF Open Data uses 'oper' for operational runs
+    else:
+        product = "oper"
+
+    H = Herbie(CYCLE_DATE, model=model_lower, product=product, fxx=fxx)
+    return H.xarray(search_pattern)
+
+# --- 1. 500hPa HGT + MSLP ---
+def plot_500hpa_mslp(model="ecmwf", domain_key="nw_pacific", fxx=0):
+    m_lower = model.lower()
+    hgt_pat = ":HGT:500 mb:" if m_lower in ["gfs", "aigfs"] else ":gh:500:"
+    mslp_pat = ":PRMSL:mean sea level:" if m_lower in ["gfs", "aigfs"] else ":msl:"
+
+    ds_hgt = fetch_herbie_ds(model, fxx, hgt_pat)
+    ds_mslp = fetch_herbie_ds(model, fxx, mslp_pat)
+
+    lons, lats = ds_hgt.longitude.values, ds_hgt.latitude.values
+    
+    # Standardize units (Height to dagpm, MSLP to hPa)
+    hgt_val = ds_hgt[list(ds_hgt.data_vars)[0]].values
+    hgt_dagpm = hgt_val / 10.0 if np.mean(hgt_val) > 1000 else hgt_val
+
+    mslp_val = ds_mslp[list(ds_mslp.data_vars)[0]].values
+    mslp_hpa = mslp_val / 100.0 if np.mean(mslp_val) > 2000 else mslp_val
+
+    fig, ax = create_base_map(domain_key)
+    ax.contourf(lons, lats, hgt_dagpm, levels=np.arange(500, 600, 4), cmap="YlOrRd", transform=ccrs.PlateCarree())
+    cs = ax.contour(lons, lats, mslp_hpa, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.0, transform=ccrs.PlateCarree())
+    ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
+
+    plt.title(f"{model.upper()} (product='oper') | 500hPa HGT + MSLP | {domain_key.upper()} | +{fxx:02d}h", fontsize=11, color="#b91c1c", fontweight="bold")
+    plt.savefig(f"{PLOTS_DIR}/{m_lower}_500hpa_mslp_{domain_key}_f{fxx:02d}.png", bbox_inches="tight")
+    plt.close()
+
+# --- 2. 850hPa Wind ---
+def plot_850hpa_wind(model="ecmwf", domain_key="nw_pacific", fxx=0):
+    m_lower = model.lower()
+    u_pat = ":UGRD:850 mb:" if m_lower in ["gfs", "aigfs"] else ":u:850:"
+    v_pat = ":VGRD:850 mb:" if m_lower in ["gfs", "aigfs"] else ":v:850:"
+
+    ds_u = fetch_herbie_ds(model, fxx, u_pat)
+    ds_v = fetch_herbie_ds(model, fxx, v_pat)
+
+    lons, lats = ds_u.longitude.values, ds_u.latitude.values
+    u, v = ds_u[list(ds_u.data_vars)[0]].values, ds_v[list(ds_v.data_vars)[0]].values
+    wind_kts = np.sqrt(u**2 + v**2) * 1.94384
+
+    fig, ax = create_base_map(domain_key)
+    cf = ax.contourf(lons, lats, wind_kts, levels=np.arange(10, 75, 5), cmap="YlGnBu", transform=ccrs.PlateCarree())
+    plt.colorbar(cf, ax=ax, orientation="horizontal", pad=0.04, shrink=0.7, label="850hPa Wind Speed (kts)")
+
+    skip = 3 if domain_key == "south_china" else 6
+    ax.barbs(lons[::skip], lats[::skip], u[::skip, ::skip], v[::skip, ::skip], length=5, transform=ccrs.PlateCarree())
+
+    plt.title(f"{model.upper()} (product='oper') | 850hPa Wind Vectors | {domain_key.upper()} | +{fxx:02d}h", fontsize=11, fontweight="bold")
+    plt.savefig(f"{PLOTS_DIR}/{m_lower}_850hpa_wind_{domain_key}_f{fxx:02d}.png", bbox_inches="tight")
+    plt.close()
+
+# --- 3. 10m Wind + MSLP ---
+def plot_10m_wind_mslp(model="ecmwf", domain_key="nw_pacific", fxx=0):
+    m_lower = model.lower()
+    u10_pat = ":UGRD:10 m above ground:" if m_lower in ["gfs", "aigfs"] else ":10u:"
+    v10_pat = ":VGRD:10 m above ground:" if m_lower in ["gfs", "aigfs"] else ":10v:"
+    mslp_pat = ":PRMSL:mean sea level:" if m_lower in ["gfs", "aigfs"] else ":msl:"
+
+    ds_u10 = fetch_herbie_ds(model, fxx, u10_pat)
+    ds_v10 = fetch_herbie_ds(model, fxx, v10_pat)
+    ds_mslp = fetch_herbie_ds(model, fxx, mslp_pat)
+
+    lons, lats = ds_u10.longitude.values, ds_u10.latitude.values
+    u10, v10 = ds_u10[list(ds_u10.data_vars)[0]].values, ds_v10[list(ds_v10.data_vars)[0]].values
+    
+    mslp_val = ds_mslp[list(ds_mslp.data_vars)[0]].values
+    mslp_hpa = mslp_val / 100.0 if np.mean(mslp_val) > 2000 else mslp_val
+    wind10_kts = np.sqrt(u10**2 + v10**2) * 1.94384
+
+    fig, ax = create_base_map(domain_key)
+    cf = ax.contourf(lons, lats, wind10_kts, levels=np.arange(10, 65, 5), cmap="Spectral_r", transform=ccrs.PlateCarree())
+    plt.colorbar(cf, ax=ax, orientation="horizontal", pad=0.04, shrink=0.7, label="10m Wind Speed (kts)")
+
+    cs = ax.contour(lons, lats, mslp_hpa, levels=np.arange(960, 1048, 4), colors="black", linewidths=1.2, transform=ccrs.PlateCarree())
+    ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
+
+    skip = 3 if domain_key == "south_china" else 6
+    ax.barbs(lons[::skip], lats[::skip], u10[::skip, ::skip], v10[::skip, ::skip], length=4.5, transform=ccrs.PlateCarree())
+
+    plt.title(f"{model.upper()} (product='oper') | 10m Wind + MSLP | {domain_key.upper()} | +{fxx:02d}h", fontsize=11, fontweight="bold")
+    plt.savefig(f"{PLOTS_DIR}/{m_lower}_10m_wind_mslp_{domain_key}_f{fxx:02d}.png", bbox_inches="tight")
+    plt.close()
+
+if __name__ == "__main__":
+    MODELS = ["ecmwf", "aifs", "gfs", "aigfs"]
+    DOMAINS_TO_RUN = ["south_china", "east_asia", "nw_pacific"]
+    FORECAST_HOURS = [0, 6, 12, 18, 24, 48, 72]
+
+    for model in MODELS:
+        for domain in DOMAINS_TO_RUN:
+            for fxx in FORECAST_HOURS:
+                try:
+                    plot_500hpa_mslp(model=model, domain_key=domain, fxx=fxx)
+                    plot_850hpa_wind(model=model, domain_key=domain, fxx=fxx)
+                    plot_10m_wind_mslp(model=model, domain_key=domain, fxx=fxx)
+                except Exception as e:
+                    print(f"Error {model} {domain} f{fxx}: {e}")
+`;
+
+      const imgDataUrl = await pyodide.runPythonAsync(pythonScript);
+      weatherMap.src = imgDataUrl;
       weatherMap.style.display = "block";
-      fallbackCanvas.style.display = "none";
-      weatherMap.src = imagePath;
-
-      // Update text header overlay
-      updateMapHeader(model, param, fxxVal);
+      loadingText.style.display = "none";
     }
 
-    function updateMapHeader(model, param, fxx) {
-      const now = new Date();
-      const modelUpper = model.toUpperCase();
-      let paramText = "";
-
-      if (param === "500hpa_mslp") paramText = "500hPa Geopotential Height (dagpm) + MSLP(hPa)";
-      else if (param === "850hpa_wind") paramText = "850hPa Wind Vectors & Speed (kt)";
-      else if (param === "10m_wind_mslp") paramText = "10m Wind (kt) + MSLP(hPa)";
-
-      mapHeader.innerHTML = `
-        ${modelUpper}: 0.25 degree resolution<br>
-        Valid: ${now.getUTCHours()}:00 UTC or HKT Forecast Hour: ${fxx}<br>
-        Plotted by HKMETC<br>
-        ${paramText}
-      `;
-    }
-
-    // Canvas fallback generator if offline or image not rendered yet
-    function renderCanvasFallback() {
-      weatherMap.style.display = "none";
-      fallbackCanvas.style.display = "block";
-
-      const ctx = fallbackCanvas.getContext('2d');
-      const w = fallbackCanvas.width;
-      const h = fallbackCanvas.height;
-
-      // Draw map canvas background
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(0, 0, w, h);
-
-      // Draw synthetic ocean/land contours
-      ctx.fillStyle = "#1e293b";
-      ctx.beginPath();
-      ctx.arc(w * 0.4, h * 0.5, 180, 0, Math.PI * 2);
-      ctx.arc(w * 0.7, h * 0.4, 120, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Isobar lines
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.lineWidth = 1.5;
-      for (let r = 50; r < 300; r += 40) {
-        ctx.beginPath();
-        ctx.arc(w * 0.5, h * 0.5, r, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "16px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("Rendering / Loading GitHub Action Plot Image...", w / 2, h / 2);
-    }
-
-    // Playback loop
-    function togglePlay() {
-      if (isPlaying) {
-        clearInterval(playInterval);
-        playBtn.textContent = "▶ 播放";
-        isPlaying = false;
-      } else {
-        playBtn.textContent = "⏸ 暫停";
-        isPlaying = true;
-        playInterval = setInterval(() => {
-          let val = parseInt(fxxSlider.value, 10) + 6;
-          if (val > parseInt(fxxSlider.max, 10)) val = 0;
-          fxxSlider.value = val;
-          updatePlot();
-        }, 1200);
-      }
-    }
-
-    // Event Listeners
-    modelSelect.addEventListener('change', updatePlot);
-    regionSelect.addEventListener('change', updatePlot);
-    paramSelect.addEventListener('change', updatePlot);
-    fxxSlider.addEventListener('input', updatePlot);
+    // Event listeners
+    modelSelect.addEventListener('change', renderPythonPlot);
+    regionSelect.addEventListener('change', renderPythonPlot);
+    paramSelect.addEventListener('change', renderPythonPlot);
+    fxxSlider.addEventListener('input', renderPythonPlot);
 
     document.getElementById('prev-btn').addEventListener('click', () => {
       let val = parseInt(fxxSlider.value, 10) - 6;
       if (val < 0) val = parseInt(fxxSlider.max, 10);
       fxxSlider.value = val;
-      updatePlot();
+      renderPythonPlot();
     });
 
     document.getElementById('next-btn').addEventListener('click', () => {
       let val = parseInt(fxxSlider.value, 10) + 6;
       if (val > parseInt(fxxSlider.max, 10)) val = 0;
       fxxSlider.value = val;
-      updatePlot();
+      renderPythonPlot();
     });
 
-    playBtn.addEventListener('click', togglePlay);
+    document.getElementById('play-btn').addEventListener('click', () => {
+      const btn = document.getElementById('play-btn');
+      if (isPlaying) {
+        clearInterval(playInterval);
+        btn.textContent = "▶ 播放";
+        isPlaying = false;
+      } else {
+        btn.textContent = "⏸ 暫停";
+        isPlaying = true;
+        playInterval = setInterval(() => {
+          let val = parseInt(fxxSlider.value, 10) + 6;
+          if (val > parseInt(fxxSlider.max, 10)) val = 0;
+          fxxSlider.value = val;
+          renderPythonPlot();
+        }, 2000);
+      }
+    });
 
-    // Initial load call
-    updatePlot();
+    initPyodide();
   </script>
 </body>
 </html>
