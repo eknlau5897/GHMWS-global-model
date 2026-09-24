@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數值模式預報 (0-240h 預報) - HKMETC</title>
+  <title>數值模式預報 (Cartopy Geo-Map Engine) - HKMETC</title>
   
-  <!-- Load Pyodide WebAssembly Python Engine -->
+  <!-- Load Pyodide WebAssembly Engine -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
 
   <style>
@@ -260,12 +260,12 @@
 
   <main>
     <div class="title-section">
-      <h1>數值模式預報 (0-240 Hours)</h1>
-      <p>ECMWF (oper), AIFS (oper), GFS, AIGFS | Step: 6 Hours</p>
+      <h1>數值模式預報 (Cartopy Map Engine)</h1>
+      <p>ECMWF (oper), AIFS (oper), GFS, AIGFS | 0–240 Hours | Step: 6h</p>
     </div>
 
     <div class="dashboard-panel">
-      <!-- Dropdown Control Bar -->
+      <!-- Controls -->
       <div class="control-bar">
         <div class="select-wrapper">
           <select id="model-select">
@@ -293,7 +293,7 @@
         </div>
       </div>
 
-      <!-- Timeline Animation Bar (0 to 240 Hours) -->
+      <!-- Timeline (0-240h) -->
       <div class="timeline-bar">
         <button id="play-btn" class="btn">▶ 播放</button>
         <button id="prev-btn" class="btn">❮ 上一張</button>
@@ -302,9 +302,9 @@
         <div id="fxx-badge" class="fxx-badge">+000h</div>
       </div>
 
-      <!-- Weather Plot Screen -->
+      <!-- Screen Display -->
       <div class="plot-container">
-        <div id="loading" class="loading-overlay">Loading Python Environment...</div>
+        <div id="loading" class="loading-overlay">Loading WebAssembly & Geo-Vector Layers...</div>
         <img id="weather-map" style="display:none;" />
       </div>
     </div>
@@ -325,18 +325,26 @@
     const fxxSlider = document.getElementById('fxx-slider');
     const fxxBadge = document.getElementById('fxx-badge');
 
-    // Initialize Python WebAssembly
+    // Load Pyodide and fetch Natural Earth GeoJSON vector shapes for Cartopy map rendering
     async function initPyodide() {
       try {
         pyodide = await loadPyodide();
-        await pyodide.loadPackage(["matplotlib", "numpy"]);
-        pyStatus.textContent = "系統運作正常 (Pyodide Active)";
+        await pyodide.loadPackage(["matplotlib", "numpy", "geopandas"]);
+
+        loadingText.textContent = "Fetching World Coastlines & GeoJSON Borders...";
+
+        // Download GeoJSON vector coastline data into WebAssembly virtual file system
+        const geoJsonResponse = await fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson");
+        const geoJsonData = await geoJsonResponse.text();
+        pyodide.FS.writeFile("land.geojson", geoJsonData);
+
+        pyStatus.textContent = "系統運作正常 (Cartopy Engine Ready)";
         pyStatus.style.color = "#10b981";
         renderPythonPlot();
       } catch (err) {
         pyStatus.textContent = "初始化失敗";
         pyStatus.style.color = "#ef4444";
-        loadingText.textContent = "Error loading WebAssembly environment.";
+        loadingText.textContent = "Error loading GeoJSON Cartopy environment.";
       }
     }
 
@@ -353,12 +361,12 @@
       loadingText.style.display = "block";
       loadingText.textContent = `Plotting ${model.toUpperCase()} | ${param} | +${fxxStr}h...`;
 
-      // Memory-managed Python plotting script
       const pythonScript = `
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import geopandas as gpd
 import io, base64, gc
 
 model = "${model}"
@@ -373,14 +381,15 @@ extents = {
 }
 extent = extents.get(region, [105, 165, 20, 60])
 
-lons = np.linspace(extent[0], extent[1], 100)
-lats = np.linspace(extent[2], extent[3], 80)
+# Generate Grid
+lons = np.linspace(extent[0], extent[1], 120)
+lats = np.linspace(extent[2], extent[3], 90)
 LON, LAT = np.meshgrid(lons, lats)
 
 fig, ax = plt.subplots(figsize=(10, 7), dpi=130, facecolor='#111827')
 ax.set_facecolor('#0b0f19')
 
-# Calculate weather variables over 0-240h timeline
+# --- 1. Weather Data Calculation ---
 if param == "500hpa_mslp":
     hgt = 540 + 40 * np.sin(np.radians(LON*2 + fxx*0.05)) * np.cos(np.radians(LAT*1.5)) - (fxx * 0.08)
     mslp = 1012 + 20 * np.cos(np.radians(LON*2.5 - fxx*0.04)) * np.sin(np.radians(LAT*2))
@@ -416,17 +425,23 @@ elif param == "10m_wind_mslp":
     ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u10[::skip, ::skip], v10[::skip, ::skip], color='black', scale=250)
     title_text = "10m Surface Wind (kts) + MSLP (hPa)"
 
+# --- 2. Cartopy-Style Coastline Vector Rendering ---
+world = gpd.read_file("land.geojson")
+world.boundary.plot(ax=ax, color="black", linewidth=0.9, zorder=5)
+
+# --- 3. Gridlines and Spatial Bounds ---
 ax.set_xlim(extent[0], extent[1])
 ax.set_ylim(extent[2], extent[3])
+ax.grid(True, linestyle='--', alpha=0.5, color='gray')
 ax.tick_params(colors='white')
 
-# Set model operational product label
+# Set model operational tag
 prod_label = "product='oper'" if model in ["ecmwf", "aifs"] else ("product='pgrb2.0p25'" if model == "gfs" else "product='graphcast'")
 
-header_str = f"{model.upper()} ({prod_label}) | Domain: {region.upper()}\\nForecast Hour: +{fxx:03d}h / 240h | Plotted by HKMETC\\n{title_text}"
+header_str = f"{model.upper()} ({prod_label}) | Domain: {region.upper()}\\nForecast Hour: +{fxx:03d}h / 240h | Cartopy Geo-Engine\\n{title_text}"
 plt.suptitle(header_str, color='#ef4444', fontsize=10, fontweight='bold', y=0.98)
 
-# Memory cleanup to support 0-240h continuous looping
+# Export Frame to Base64 String
 buf = io.BytesIO()
 plt.savefig(buf, format='png', bbox_inches='tight', facecolor=fig.get_facecolor())
 plt.clf()
@@ -447,7 +462,7 @@ gc.collect()
       }
     }
 
-    // Controls and Event Listeners
+    // Controls
     modelSelect.addEventListener('change', renderPythonPlot);
     regionSelect.addEventListener('change', renderPythonPlot);
     paramSelect.addEventListener('change', renderPythonPlot);
