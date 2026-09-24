@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數值模式預報 (Cartopy Geo-Map Engine) - HKMETC</title>
+  <title>數值模式預報 (Cartopy Map Engine) - HKMETC</title>
   
   <!-- Load Pyodide WebAssembly Engine -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
@@ -260,7 +260,7 @@
 
   <main>
     <div class="title-section">
-      <h1>數值模式預報 (Cartopy Map Engine)</h1>
+      <h1>數值模式預報 (Cartopy Geo-Engine)</h1>
       <p>ECMWF (oper), AIFS (oper), GFS, AIGFS | 0–240 Hours | Step: 6h</p>
     </div>
 
@@ -325,7 +325,7 @@
     const fxxSlider = document.getElementById('fxx-slider');
     const fxxBadge = document.getElementById('fxx-badge');
 
-    // Load Pyodide and fetch Natural Earth GeoJSON vector shapes for Cartopy map rendering
+    // Load Pyodide and download GeoJSON coastlines
     async function initPyodide() {
       try {
         pyodide = await loadPyodide();
@@ -333,7 +333,7 @@
 
         loadingText.textContent = "Fetching World Coastlines & GeoJSON Borders...";
 
-        // Download GeoJSON vector coastline data into WebAssembly virtual file system
+        // Fetch Natural Earth 110m land vector shapes
         const geoJsonResponse = await fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson");
         const geoJsonData = await geoJsonResponse.text();
         pyodide.FS.writeFile("land.geojson", geoJsonData);
@@ -381,7 +381,7 @@ extents = {
 }
 extent = extents.get(region, [105, 165, 20, 60])
 
-# Generate Grid
+# Generate Grid Arrays
 lons = np.linspace(extent[0], extent[1], 120)
 lats = np.linspace(extent[2], extent[3], 90)
 LON, LAT = np.meshgrid(lons, lats)
@@ -389,7 +389,7 @@ LON, LAT = np.meshgrid(lons, lats)
 fig, ax = plt.subplots(figsize=(10, 7), dpi=130, facecolor='#111827')
 ax.set_facecolor('#0b0f19')
 
-# --- 1. Weather Data Calculation ---
+# --- 1. Meteorological Field Calculations ---
 if param == "500hpa_mslp":
     hgt = 540 + 40 * np.sin(np.radians(LON*2 + fxx*0.05)) * np.cos(np.radians(LAT*1.5)) - (fxx * 0.08)
     mslp = 1012 + 20 * np.cos(np.radians(LON*2.5 - fxx*0.04)) * np.sin(np.radians(LAT*2))
@@ -425,11 +425,18 @@ elif param == "10m_wind_mslp":
     ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip], u10[::skip, ::skip], v10[::skip, ::skip], color='black', scale=250)
     title_text = "10m Surface Wind (kts) + MSLP (hPa)"
 
-# --- 2. Cartopy-Style Coastline Vector Rendering ---
+# --- 2. Cartopy Fix: Set CRS and Clip to Extent Bounding Box ---
 world = gpd.read_file("land.geojson")
-world.boundary.plot(ax=ax, color="black", linewidth=0.9, zorder=5)
 
-# --- 3. Gridlines and Spatial Bounds ---
+if world.crs is None:
+    world.set_crs(epsg=4326, inplace=True)
+
+# Bounding box tuple: (min_lon, min_lat, max_lon, max_lat)
+bbox = (extent[0], extent[2], extent[1], extent[3])
+world_clipped = gpd.clip(world, bbox)
+world_clipped.boundary.plot(ax=ax, color="black", linewidth=0.9, zorder=5)
+
+# --- 3. Gridlines and Bounds Alignment ---
 ax.set_xlim(extent[0], extent[1])
 ax.set_ylim(extent[2], extent[3])
 ax.grid(True, linestyle='--', alpha=0.5, color='gray')
@@ -441,7 +448,7 @@ prod_label = "product='oper'" if model in ["ecmwf", "aifs"] else ("product='pgrb
 header_str = f"{model.upper()} ({prod_label}) | Domain: {region.upper()}\\nForecast Hour: +{fxx:03d}h / 240h | Cartopy Geo-Engine\\n{title_text}"
 plt.suptitle(header_str, color='#ef4444', fontsize=10, fontweight='bold', y=0.98)
 
-# Export Frame to Base64 String
+# Save to Base64 String and Clean Memory
 buf = io.BytesIO()
 plt.savefig(buf, format='png', bbox_inches='tight', facecolor=fig.get_facecolor())
 plt.clf()
