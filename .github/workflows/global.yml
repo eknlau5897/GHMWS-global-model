@@ -17,58 +17,77 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================================
-      # 1. Clear Storage on macOS Runner
+      # 1. 安全清理 macOS 磁碟空間 (保留 CommandLineTools)
       # ==========================================================
-      - name: Free Disk Space on macOS
+      - name: Safe Free Disk Space on macOS
         run: |
-          echo "=== Disk space before cleanup ==="
+          echo "=== 磁碟清理前狀況 ==="
           df -h
           
-          # Delete heavy SDKs and tools pre-installed on macOS runner
-          sudo rm -rf /Library/Developer/CommandLineTools
+          # 只刪除完整的 Xcode App (幾十 GB)，嚴禁刪除 CommandLineTools
           sudo rm -rf /Applications/Xcode*.app
           sudo rm -rf /usr/local/Cellar/android-sdk
           sudo rm -rf /usr/local/opt/android-sdk
           
-          # Clear Homebrew cache and unwanted formulas
+          # 清理 Homebrew 下載快取
           brew cleanup -s || true
           rm -rf $(brew --cache) || true
           
-          echo "=== Disk space after cleanup ==="
+          echo "=== 磁碟清理後狀況 ==="
           df -h
 
       # ==========================================================
-      # 2. Set up Python & Dependencies
+      # 2. 檢查並補全 Xcode Command Line Tools (防止 Homebrew 報錯)
+      # ==========================================================
+      - name: Ensure Xcode Command Line Tools
+        run: |
+          if ! xcode-select -p >/dev/null 2>&1; then
+            echo "Command Line Tools missing, installing..."
+            xcode-select --install || true
+          fi
+
+      # ==========================================================
+      # 3. 設定 Python 環境
       # ==========================================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # ==========================================================
+      # 4. 安裝系統依賴 (Cartopy & EcCodes)
+      # ==========================================================
       - name: Install System Dependencies via Homebrew
         run: |
+          brew update || true
           brew install geos eccodes
 
+      # ==========================================================
+      # 5. 安裝 Python 套件
+      # ==========================================================
       - name: Install Python Packages
         run: |
           python -m pip install --upgrade pip
           pip install numpy matplotlib cartopy herbie-data xarray cfgrib
 
       # ==========================================================
-      # 3. Run Plot Script & Always Cleanup
+      # 6. 執行 Python 繪圖腳本
       # ==========================================================
       - name: Run Plot Generator Script
         run: |
           python generate_plots.py
 
+      # ==========================================================
+      # 7. 清理臨時氣象資料快取
+      # ==========================================================
       - name: Clean Temporary GRIB Cache
         if: always()
         run: |
           rm -rf ~/data
-          echo "Herbie GRIB cache cleared."
+          echo "Herbie GRIB 快取已清理"
 
       # ==========================================================
-      # 4. Commit and Push
+      # 8. Commit 並 Push 回 GitHub
       # ==========================================================
       - name: Commit and Push Updated Plots
         run: |
@@ -78,8 +97,8 @@ jobs:
           git add plots/*.png
           
           if git diff --staged --quiet; then
-            echo "No new changes detected in plot images."
+            echo "沒有檢測到新的圖片變更。"
           else
-            git commit -m "Auto-update model plots [skip ci]"
+            git commit -m "Auto-update model plots from macOS [skip ci]"
             git push
           fi
