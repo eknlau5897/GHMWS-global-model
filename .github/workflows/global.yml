@@ -1,0 +1,52 @@
+name: Auto Generate Model Plots
+
+on:
+  schedule:
+    # 00Z model run data is available ~07:30 UTC; 12Z model run data is available ~19:30 UTC
+    - cron: '30 8,20 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write # Required to commit generated images back to repo
+
+jobs:
+  build-and-plot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install System Dependencies for Cartopy & EcCodes
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgeos-dev libeccodes-dev
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy matplotlib cartopy herbie-data xarray cfgrib
+
+      - name: Run Plot Generator Script
+        run: |
+          python generate_plots.py
+
+      - name: Commit and Push Updated Plots
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add plots/*.png
+          
+          if git diff --staged --quiet; then
+            echo "No new changes detected in plot images."
+          else
+            git commit -m "Auto-update model plots [skip ci]"
+            git push
+          fi
