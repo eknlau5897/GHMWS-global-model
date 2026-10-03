@@ -1,4 +1,5 @@
 import os
+import shutil
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,20 +11,14 @@ PLOTS_DIR = "plots"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
 def get_latest_cycle():
-    """
-    Determines the target cycle (00Z or 12Z) based on current UTC time.
-    """
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    
     if now_utc.hour >= 19:
-        cycle_date_str = now_utc.strftime("%Y-%m-%d 12:00")
+        return now_utc.strftime("%Y-%m-%d 12:00")
     elif now_utc.hour >= 7:
-        cycle_date_str = now_utc.strftime("%Y-%m-%d 00:00")
+        return now_utc.strftime("%Y-%m-%d 00:00")
     else:
         yesterday = now_utc - datetime.timedelta(days=1)
-        cycle_date_str = yesterday.strftime("%Y-%m-%d 12:00")
-
-    return cycle_date_str
+        return yesterday.strftime("%Y-%m-%d 12:00")
 
 CYCLE_DATE = get_latest_cycle()
 print(f"Executing workflow for model run cycle: {CYCLE_DATE}")
@@ -34,8 +29,14 @@ DOMAINS = {
     "nw_pacific": [105, 165, 0, 45]
 }
 
+def clean_herbie_cache():
+    """Removes temporary raw GRIB/idx files downloaded by Herbie."""
+    cache_dir = os.path.expanduser("~/data")
+    if os.path.exists(cache_dir):
+        shutil.rmtree(cache_dir, ignore_errors=True)
+        print("Cleared Herbie temporary file cache.")
+
 def get_save_path(model, domain_key, var_key, fxx):
-    """Saves as plots/{model}_{var}_{domain}_f{fxx:02d}.png"""
     filename = f"{model.lower()}_{var_key}_{domain_key}_f{fxx:02d}.png"
     return os.path.join(PLOTS_DIR, filename)
 
@@ -90,7 +91,8 @@ def get_herbie_params(model):
 
 def fetch_herbie_ds(model_name, product, fxx, search_pattern):
     H = Herbie(CYCLE_DATE, model=model_name, product=product, fxx=fxx)
-    return H.xarray(search_pattern)
+    ds = H.xarray(search_pattern)
+    return ds
 
 def extract_coords_and_grid(ds):
     data_var = list(ds.data_vars)[0]
@@ -204,3 +206,6 @@ if __name__ == "__main__":
                     plot_2m_temp(model=model, domain_key=domain, fxx=fxx)
                 except Exception as e:
                     print(f"Error {model} {domain} f{fxx:02d}: {e}")
+
+    # Purge downloaded raw GRIB cache when done
+    clean_herbie_cache()
