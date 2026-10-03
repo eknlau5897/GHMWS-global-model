@@ -76,58 +76,58 @@
     <main class="container mx-auto px-4 py-6 flex-grow">
         <div class="text-center mb-6">
             <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">數值模式預報</h2>
-            <p class="text-sky-400 text-sm font-medium mt-1">自動更新（EC, GFS, AIFS, Graphcast, Pangu）</p>
+            <p class="text-sky-400 text-sm font-medium mt-1">自動更新（ECMWF, GFS, AIFS）</p>
         </div>
 
         <div class="model-card relative p-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative mb-6">
+                <!-- Model Selector -->
                 <div class="relative">
                     <div id="modelSelectBox" class="select-box">
                         <span id="modelSelectText">ECMWF</span>
                         <span class="text-sky-400 text-xs">▼</span>
                     </div>
                     <div id="modelDropdown" class="select-dropdown hidden">
-                        <div class="select-option" data-model="ecmwf">ECMWF</div>
+                        <div class="select-option" data-model="ifs">ECMWF</div>
                         <div class="select-option" data-model="gfs">GFS</div>
                         <div class="select-option" data-model="aifs">AIFS</div>
-                        <div class="select-option" data-model="pangu_weather">pangu ECMWF</div>
-                        <div class="select-option" data-model="graphcast">Graphcast GFS</div>
                     </div>
                 </div>
 
+                <!-- Region Selector -->
                 <div class="relative">
                     <div id="regionSelectBox" class="select-box">
-                        <span id="regionSelectText">西北太平洋</span>
+                        <span id="regionSelectText">東亞</span>
                         <span class="text-sky-400 text-xs">▼</span>
                     </div>
                     <div id="regionDropdown" class="select-dropdown hidden">
-                        <div class="select-option" data-region="nwp">西北太平洋</div>
-                        <div class="select-option" data-region="south_china">中國南方</div>
+                        <div class="select-option" data-region="east_asia">東亞</div>
+                        <div class="select-option" data-region="south_china">華南</div>
+                        <div class="select-option" data-region="nw_pacific">西北太平洋</div>
                     </div>
                 </div>
 
+                <!-- Variable Selector -->
                 <div class="relative">
                     <div id="varSelectBox" class="select-box">
-                        <span id="varSelectText">500hPa 位勢高度 + MSLP 海平面氣壓</span>
+                        <span id="varSelectText">500hPa 位勢高度 + MSLP</span>
                         <span class="text-sky-400 text-xs">▼</span>
                     </div>
                     <div id="varDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-var="500hpa_mslp">500hPa 位勢高度 + MSLP</div>
+                        <div class="select-option" data-var="850hpa_wind">850hPa 風場</div>
+                        <div class="select-option" data-var="10m_wind_mslp">10m 風場 + MSLP</div>
+                        <div class="select-option" data-var="2m_temp">2m 氣溫 + MSLP</div>
                     </div>
                 </div>
             </div>
 
-            <img id="modelImage" src="model/ECMWF/NWP/500hPa GH+MSLP/0.png" class="model-img" alt="模式預報">
+            <img id="modelImage" src="plots/ifs_500hpa_mslp_east_asia_f00.png" class="model-img" alt="模式預報">
 
             <div class="flex justify-center items-center gap-5 mb-2 mt-6">
-                <button id="prevBtn" class="control-btn" title="上一個">
-                    &lt;
-                </button>
-                <button id="playBtn" class="control-btn" title="播放/暫停">
-                    ▶
-                </button>
-                <button id="nextBtn" class="control-btn" title="下一個">
-                    &gt;
-                </button>
+                <button id="prevBtn" class="control-btn" title="上一個">&lt;</button>
+                <button id="playBtn" class="control-btn" title="播放/暫停">▶</button>
+                <button id="nextBtn" class="control-btn" title="下一個">&gt;</button>
             </div>
         </div>
 
@@ -136,11 +136,9 @@
             <p class="font-bold mb-2 text-base text-sky-400">使用說明</p>
             <div class="space-y-1 text-sm text-slate-400">
                 <p>• 三級選擇：模式 → 地區 → 氣象要素</p>
-                <p>• 切換地區會自動顯示該地區可用的參數</p>
-                <p>• 點擊「&lt; / &gt;」切換預報時效（0~240小時）</p>
+                <p>• 點擊「&lt; / &gt;」切換預報時效（0~228小時，前120小時每6小時，後續每12小時）</p>
                 <p>• 點擊「▶」自動輪播（每2秒切換）</p>
                 <p>• 資料僅供參考，請以官方發布為準</p>
-                <p>• ECMWF、GFS及AIFS每日更新兩次（00Z和12Z），盤古及Graphcast預留未上線</p>
             </div>
         </div>
     </main>
@@ -152,80 +150,22 @@
     </footer>
 
     <script>
-        const pathConfig = {
-            ecmwf: {
-                nwp: {
-                    "500hPa 位勢高度 + MSLP 海平面氣壓": "ECMWF/NWP/500hPa GH+MSLP/",
-                    "850hPa 風場 + MSLP 海平面氣壓": "ECMWF/NWP/850hPa wind+MSLP/"
-                },
-                south_china: {
-                    "10m 風場 + MSLP 海平面氣壓": "ECMWF/South China/10m wind + MSLP/",
-                    "850hPa風場": "ECMWF/South China/850hPa wind/"
-                }
-            },
-            gfs: {
-                nwp: {
-                    "500hPa GH+MSLP": "GFS/NWP/500hPa GH MSLP/",
-                    "850wind+MSLP": "GFS/NWP/850hPa wind MSLP/",
-                },
-                south_china:{
-                    "10m 風場及MSLP":"GFS/South China/10m wind MSLP/",
-                    "850hPa 風場":"GFS/South China/850hPa wind/"
-                }
-            },
-            aifs: {
-                nwp: {
-                    "500hPa GH+MSLP": "AIFS/NWP/500hPa GH MSLP/",
-                    "850hPa 風場+MSLP": "AIFS/NWP/850hPa wind MSLP/"
-                },
-                south_china:{
-                    "10m 風場及MSLP":"AIFS/South China/10m wind MSLP/",
-                    "850hPa 風場":"AIFS/South China/850hPa wind MSLP/"
-                }
-            },
-            pangu_weather:{
-                nwp:{
-                    "500hPa GH+MSLP":"AIWP/Pangu/NWP/500hPa_GH_MSLP/",
-                    "850hPa 風場 + MSLP 海平面氣壓": "AIWP/Pangu/NWP/850hPa_wind_MSLP/"
-                },
-                south_china:{
-                    "10m 風場及MSLP":"AIWP/Pangu/South China/10m_wind_MSLP/",
-                    "850hPa 風場": "AIWP/Pangu/South China/850hPa_wind/"
-                }
-            },
-            graphcast:{
-                nwp:{
-                    "500hPa GH+MSLP":"AIWP/GraphCast/NWP/500hPa_GH_MSLP/",
-                    "850hPa 風場": "AIWP/GraphCast/NWP/850hPa_wind_MSLP/"
-                },
-                south_china:{
-                    "10m 風場及MSLP":"AIWP/GraphCast/South China/10m_wind_MSLP/",
-                    "850hPa 風場+MSLP": "AIWP/GraphCast/South China/850hPa_wind/"
-                }
-            }
-        };
+        // 30 forecast steps matching Python script (0-120h step 6, 132-228h step 12)
+        const fxxList = [
+            0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120,
+            132, 144, 156, 168, 180, 192, 204, 216, 228
+        ];
 
-        const fxxList = [0,12,24,36,48,60,72,84,96,108,120,132,144,156,168,180,192,204,216,228,240];
         let currentFxx = 0;
-        let currentModel = "ecmwf";
-        let currentRegion = "nwp";
-        let currentVar = "500hPa GH+MSLP";
+        let currentModel = "ifs";
+        let currentRegion = "east_asia";
+        let currentVar = "500hpa_mslp";
         let autoPlay = null;
 
         const img = document.getElementById("modelImage");
         const modelSelectText = document.getElementById("modelSelectText");
         const regionSelectText = document.getElementById("regionSelectText");
         const varSelectText = document.getElementById("varSelectText");
-        const varDropdown = document.getElementById("varDropdown");
-
-        // Helper function to pad numbers with leading zeros (e.g., 0 -> "000", 12 -> "012")
-        function padZero(num, width = 3) {
-            let s = num.toString();
-            while (s.length < width) {
-                s = "0" + s;
-            }
-            return s;
-        }
 
         function closeAllDropdowns() {
             document.getElementById("modelDropdown").classList.add("hidden");
@@ -233,39 +173,13 @@
             document.getElementById("varDropdown").classList.add("hidden");
         }
 
-        function updateVarList() {
-            varDropdown.innerHTML = "";
-            const vars = pathConfig[currentModel][currentRegion];
-            
-            for (let v in vars) {
-                let div = document.createElement("div");
-                div.className = "select-option";
-                div.dataset.var = v;
-                div.innerText = v;
-                varDropdown.appendChild(div);
-            }
-
-            if (!vars[currentVar]) {
-                currentVar = Object.keys(vars)[0];
-                varSelectText.innerText = currentVar;
-            }
-            updateImage();
-        }
-
         function updateImage() {
-            const path = pathConfig[currentModel][currentRegion][currentVar];
-            
-            // Only Pangu and Graphcast use 3-digit zero padding (000.png, 012.png, etc.)
-            let filename;
-            if (currentModel === "pangu_weather" || currentModel === "graphcast") {
-                filename = padZero(currentFxx, 3) + ".png";
-            } else {
-                filename = currentFxx + ".png"; // standard layout for others (e.g., 0.png, 12.png)
-            }
-            
-            img.src = path + filename;
+            const fxxStr = String(currentFxx).padStart(2, '0');
+            // Formats to: plots/ifs_2m_temp_south_china_f36.png
+            img.src = `plots/${currentModel}_${currentVar}_${currentRegion}_f${fxxStr}.png`;
         }
 
+        // Dropdown toggles
         document.getElementById("modelSelectBox").addEventListener("click", (e) => {
             e.stopPropagation();
             const target = document.getElementById("modelDropdown");
@@ -290,12 +204,12 @@
             if (isHidden) target.classList.remove("hidden");
         });
 
+        // Dropdown option selections
         document.querySelectorAll("#modelDropdown .select-option").forEach(option => {
             option.addEventListener("click", () => {
                 currentModel = option.dataset.model;
                 modelSelectText.innerText = option.innerText;
-                currentFxx = 0;
-                updateVarList();
+                updateImage();
                 closeAllDropdowns();
             });
         });
@@ -304,25 +218,23 @@
             option.addEventListener("click", () => {
                 currentRegion = option.dataset.region;
                 regionSelectText.innerText = option.innerText;
-                currentFxx = 0;
-                updateVarList(); 
+                updateImage();
                 closeAllDropdowns();
             });
         });
 
-        document.addEventListener("click", (e) => {
-            const option = e.target.closest(".select-option");
-            if (option && option.dataset.var) {
+        document.querySelectorAll("#varDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
                 currentVar = option.dataset.var;
-                varSelectText.innerText = currentVar;
-                currentFxx = 0;
+                varSelectText.innerText = option.innerText;
                 updateImage();
                 closeAllDropdowns();
-            } else {
-                closeAllDropdowns();
-            }
+            });
         });
 
+        document.addEventListener("click", closeAllDropdowns);
+
+        // Animation / Navigation Controls
         function stopPlay() {
             if (autoPlay) {
                 clearInterval(autoPlay);
@@ -358,7 +270,7 @@
             }
         });
 
-        updateVarList();
+        updateImage();
     </script>
 </body>
 </html>
