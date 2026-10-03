@@ -1,42 +1,76 @@
-name: Auto Generate Model Plots
+name: Auto Generate Model Plots (macOS)
 
 on:
   schedule:
-    # 00Z model run data is available ~07:30 UTC; 12Z model run data is available ~19:30 UTC
     - cron: '30 8,20 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 permissions:
-  contents: write # Required to commit generated images back to repo
+  contents: write
 
 jobs:
   build-and-plot:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ==========================================================
+      # 1. Clear Storage on macOS Runner
+      # ==========================================================
+      - name: Free Disk Space on macOS
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+          
+          # Delete heavy SDKs and tools pre-installed on macOS runner
+          sudo rm -rf /Library/Developer/CommandLineTools
+          sudo rm -rf /Applications/Xcode*.app
+          sudo rm -rf /usr/local/Cellar/android-sdk
+          sudo rm -rf /usr/local/opt/android-sdk
+          
+          # Clear Homebrew cache and unwanted formulas
+          brew cleanup -s || true
+          rm -rf $(brew --cache) || true
+          
+          echo "=== Disk space after cleanup ==="
+          df -h
+
+      # ==========================================================
+      # 2. Set up Python & Dependencies
+      # ==========================================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install System Dependencies for Cartopy & EcCodes
+      - name: Install System Dependencies via Homebrew
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgeos-dev libeccodes-dev
+          brew install geos eccodes
 
-      - name: Install Python Dependencies
+      - name: Install Python Packages
         run: |
           python -m pip install --upgrade pip
           pip install numpy matplotlib cartopy herbie-data xarray cfgrib
 
+      # ==========================================================
+      # 3. Run Plot Script & Always Cleanup
+      # ==========================================================
       - name: Run Plot Generator Script
         run: |
           python generate_plots.py
 
+      - name: Clean Temporary GRIB Cache
+        if: always()
+        run: |
+          rm -rf ~/data
+          echo "Herbie GRIB cache cleared."
+
+      # ==========================================================
+      # 4. Commit and Push
+      # ==========================================================
       - name: Commit and Push Updated Plots
         run: |
           git config --global user.name "github-actions[bot]"
