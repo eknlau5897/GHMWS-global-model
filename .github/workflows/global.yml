@@ -37,7 +37,7 @@ jobs:
           df -h
 
       # ==========================================================
-      # 2. 檢查並補全 Xcode Command Line Tools (防止 Homebrew 報錯)
+      # 2. 檢查並補全 Xcode Command Line Tools
       # ==========================================================
       - name: Ensure Xcode Command Line Tools
         run: |
@@ -87,18 +87,24 @@ jobs:
           echo "Herbie GRIB 快取已清理"
 
       # ==========================================================
-      # 8. Commit 並 Push 回 GitHub
+      # 8. 批次 Commit 並 Push (防止超過 1000 個檔案限制)
       # ==========================================================
-      - name: Commit and Push Updated Plots
+      - name: Chunked Commit and Push Plots
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add plots/*.png
+          # 每次最多 commit 400 個檔案，分段提交並 push
+          CHUNK_SIZE=400
           
-          if git diff --staged --quiet; then
-            echo "沒有檢測到新的圖片變更。"
-          else
-            git commit -m "Auto-update model plots from macOS [skip ci]"
-            git push
-          fi
+          find plots -type f -name "*.png" | xargs -n $CHUNK_SIZE | while read batch; do
+            if [ -n "$batch" ]; then
+              git add $batch
+              if ! git diff --staged --quiet; then
+                echo "Committing batch of images..."
+                git commit -m "Auto-update model plots batch [skip ci]"
+                git pull --rebase
+                git push
+              fi
+            fi
+          done
