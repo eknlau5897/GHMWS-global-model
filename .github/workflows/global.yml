@@ -75,7 +75,7 @@ jobs:
       # ==========================================================
       - name: Run Plot Generator Script
         run: |
-          python generate_plots.py
+          python global.py
 
       # ==========================================================
       # 7. 清理臨時氣象資料快取
