@@ -2,7 +2,7 @@ name: Auto Generate Model Plots (macOS)
 
 on:
   schedule:
-    - cron: '30 8,20 * * *'
+    - cron: '0 5,17 * * *'
   workflow_dispatch:
 
 permissions:
