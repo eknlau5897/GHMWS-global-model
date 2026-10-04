@@ -163,7 +163,7 @@ def plot_10m_wind_mslp(model="ifs", domain_key="east_asia", fxx=0):
     ax.clabel(cs, inline=True, fontsize=8, fmt="%d")
 
     skip = 3 if domain_key == "south_china" else 6
-    ax.barbs(lons[::skip, ::skip], lats[::skip, ::skip], u10[::skip, ::skip], v10[::skip, ::skip], length=4.5, transform=ccrs.PlateCarree())
+    ax.barbs(lons[::skip, ::skip], lats[::skip, ::skip], u10[::skip, ::skip]*3.6/1.852, v10[::skip, ::skip]*3.6/1.852, length=4.5, transform=ccrs.PlateCarree())
 
     plt.title(f"{model.upper()} | 10m Wind + MSLP | {domain_key.upper()} | +{fxx:02d}h", fontsize=11, fontweight="bold")
     plt.savefig(get_save_path(model, domain_key, "10m_wind_mslp", fxx), bbox_inches="tight")
