@@ -90,21 +90,44 @@ jobs:
       # 8. 批次 Commit 並 Push (防止超過 1000 個檔案限制)
       # ==========================================================
       - name: Chunked Commit and Push Plots
+        if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 每次最多 commit 400 個檔案，分段提交並 push
-          CHUNK_SIZE=400
-          
-          find plots -type f -name "*.png" | xargs -n $CHUNK_SIZE | while read batch; do
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+
+          # 1. Unstage any residual changes to start with a clean state
+          git reset
+
+          CHUNK_SIZE=300
+
+          # 2. Find all generated PNG files and commit in chunks of 300
+          find plots -type f -name "*.png" | xargs -n $CHUNK_SIZE | while read -r batch; do
             if [ -n "$batch" ]; then
+              # Stage only this specific batch of files
               git add $batch
+              
               if ! git diff --staged --quiet; then
                 echo "Committing batch of images..."
                 git commit -m "Auto-update model plots batch [skip ci]"
-                git pull --rebase
-                git push
+                
+                # Push with retry logic
+                n=0
+                until [ "$n" -ge 5 ]; do
+                  git pull --rebase origin main || true
+                  git push origin main && break
+                  n=$((n+1))
+                  echo "Push failed. Retrying in 5s ($n/5)..."
+                  sleep 5
+                done
               fi
             fi
           done
+
+          # 3. Clean up any remaining unstaged/staged untracked files
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-update remaining plot assets [skip ci]"
+            git push origin main || true
+          fi
