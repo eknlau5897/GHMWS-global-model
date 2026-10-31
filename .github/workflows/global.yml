@@ -1,0 +1,116 @@
+name: Auto Generate Model Plots (macOS)
+
+on:
+  schedule:
+    - cron: '0 5,17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-plot:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ==========================================================
+      # 1. 安全清理 macOS 磁碟空間 (保留 CommandLineTools)
+      # ==========================================================
+      - name: Safe Free Disk Space on macOS
+        run: |
+          echo "=== 磁碟清理前狀況 ==="
+          df -h
+          
+          # 只刪除完整的 Xcode App (幾十 GB)，嚴禁刪除 CommandLineTools
+          sudo rm -rf /Applications/Xcode*.app
+          sudo rm -rf /usr/local/Cellar/android-sdk
+          sudo rm -rf /usr/local/opt/android-sdk
+          
+          # 清理 Homebrew 下載快取
+          brew cleanup -s || true
+          rm -rf $(brew --cache) || true
+          
+          echo "=== 磁碟清理後狀況 ==="
+          df -h
+
+      # ==========================================================
+      # 2. 檢查並補全 Xcode Command Line Tools
+      # ==========================================================
+      - name: Ensure Xcode Command Line Tools
+        run: |
+          if ! xcode-select -p >/dev/null 2>&1; then
+            echo "Command Line Tools missing, installing..."
+            xcode-select --install || true
+          fi
+
+      # ==========================================================
+      # 3. 設定 Python 環境
+      # ==========================================================
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ==========================================================
+      # 4. 安裝系統依賴 (Cartopy & EcCodes)
+      # ==========================================================
+      - name: Install System Dependencies via Homebrew
+        run: |
+          brew update || true
+          brew install geos eccodes
+
+      # ==========================================================
+      # 5. 安裝 Python 套件
+      # ==========================================================
+      - name: Install Python Packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy matplotlib cartopy herbie-data xarray cfgrib
+
+      # ==========================================================
+      # 6. 執行 Python 繪圖腳本
+      # ==========================================================
+      - name: Run Plot Generator Script
+        run: |
+          python global.py
+
+      # ==========================================================
+      # 7. 清理臨時氣象資料快取
+      # ==========================================================
+      - name: Clean Temporary GRIB Cache
+        if: always()
+        run: |
+          rm -rf ~/data
+          echo "Herbie GRIB 快取已清理"
+
+      # ==========================================================
+      # 8. 清除 Git 歷史記錄並保留最新 Commit 提交
+      # ==========================================================
+      - name: Clear Git History and Keep Latest Commit
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+
+          # 建立一個新的孤立分支 (orphan branch) 來清除過去所有歷史
+          git checkout --orphan temp-branch
+          git add -A
+          git commit -m "Auto-update model plots [skip ci]"
+
+          # 刪除舊的 main 分支並將當前分支重新命名為 main
+          git branch -D main || true
+          git branch -m main
+
+          # 強制推送至遠端，完美覆蓋舊歷史並只留這一個 commit
+          n=0
+          until [ "$n" -ge 5 ]; do
+            git push origin main --force && break
+            n=$((n+1))
+            echo "Force push failed. Retrying in 5s ($n/5)..."
+            sleep 5
+          done
