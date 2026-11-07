@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>香港氣象追擊網 | 全球模式預報</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        cardBg: '#0f172a',
+                    },
+                },
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .model-card { @apply bg-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden; }
+            .model-img { @apply w-[85%] md:w-[75%] h-auto object-contain mx-auto rounded-lg border border-slate-800 bg-slate-950; }
+            .control-btn { @apply w-12 h-12 flex items-center justify-center rounded-full bg-slate-800 text-sky-400 hover:bg-sky-600 hover:text-white transition-all shadow-md border border-slate-700 font-medium; }
+            .select-box { @apply bg-slate-800/90 border border-slate-700/80 px-5 py-3 rounded-lg cursor-pointer flex justify-between items-center text-lg font-medium text-slate-100 hover:border-slate-600 transition-colors; }
+            .select-dropdown { @apply absolute left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden text-slate-200; }
+            .select-option { @apply px-5 py-3 hover:bg-sky-600/30 cursor-pointer transition-colors text-slate-200 hover:text-white; }
+            .nav-link { @apply px-4 py-3 text-slate-200 hover:text-white hover:bg-sky-600/30 text-sm font-medium transition-all duration-200 rounded-md whitespace-nowrap; }
+        }
+
+        body { 
+            background-color: #0b0f19; 
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; 
+        } 
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased">
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 py-3 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    香港氣象追擊網
+                    <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-normal">HKMETC</span>
+                </h1>
+                <p class="text-xs text-slate-400 tracking-wider">HKMETC</p>
+            </div>
+            <div class="hidden md:flex items-center gap-4 text-xs text-slate-400">
+                <span>系統運作正常</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Bar -->
+    <nav class="bg-slate-900/80 border-b border-slate-800/80 sticky top-[65px] z-40 backdrop-blur-md">
+        <div class="container mx-auto px-4">
+            <ul class="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar-none">
+                <li><a href="https://eknlau5897.github.io/met-chaser/index.html" class="nav-link">首頁</a></li>
+                <li><a href="https://zax41006-bot.github.io/GHMWS-TC-GIS/" class="nav-link">熱帶氣旋資訊</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-realtime/index.html" class="nav-link">實況天氣</a></li>
+                <li><a href="index.html" class="nav-link bg-sky-600/20 text-sky-400">全球模式預報</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-meso-model/index.html" class="nav-link">中尺度模式預報</a></li>
+                <li><a href="https://eknlau5897.github.io/HKMETC-ensemble/index.html" class="nav-link">集合模式預報</a></li>
+                <li><a href="https://eknlau5897.github.io/Earth_windy_2.0/demo/demo.html" class="nav-link">地球風場動畫2.0</a></li>
+                <li><a href="https://eknlau5897.github.io/GHMWS-nowcast/index.html" class="nav-link">臨近降雨預報</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1">數值模式預報</h2>
+            <p class="text-sky-400 text-sm font-medium mt-1">自動更新（ECMWF, GFS, AIFS）</p>
+        </div>
+
+        <div class="model-card relative p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative mb-6">
+                <!-- Model Selector -->
+                <div class="relative">
+                    <div id="modelSelectBox" class="select-box">
+                        <span id="modelSelectText">ECMWF</span>
+                        <span class="text-sky-400 text-xs">▼</span>
+                    </div>
+                    <div id="modelDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-model="ifs">ECMWF</div>
+                        <div class="select-option" data-model="gfs">GFS</div>
+                        <div class="select-option" data-model="aifs">AIFS</div>
+                    </div>
+                </div>
+
+                <!-- Region Selector -->
+                <div class="relative">
+                    <div id="regionSelectBox" class="select-box">
+                        <span id="regionSelectText">東亞</span>
+                        <span class="text-sky-400 text-xs">▼</span>
+                    </div>
+                    <div id="regionDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-region="east_asia">東亞</div>
+                        <div class="select-option" data-region="south_china">華南</div>
+                        <div class="select-option" data-region="nw_pacific">西北太平洋</div>
+                    </div>
+                </div>
+
+                <!-- Variable Selector -->
+                <div class="relative">
+                    <div id="varSelectBox" class="select-box">
+                        <span id="varSelectText">500hPa 位勢高度 + MSLP</span>
+                        <span class="text-sky-400 text-xs">▼</span>
+                    </div>
+                    <div id="varDropdown" class="select-dropdown hidden">
+                        <div class="select-option" data-var="500hpa_mslp">500hPa 位勢高度 + MSLP</div>
+                        <div class="select-option" data-var="850hpa_wind_mslp">850hPa 風場 + MSLP</div>
+                        <div class="select-option" data-var="10m_wind_mslp">10m 風場 + MSLP</div>
+                        <div class="select-option" data-var="2m_temp_mslp">2m 氣溫 + MSLP</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Updated image source structure pointing to nested model folder -->
+            <img id="modelImage" src="plots/ifs/ifs_500hpa_mslp_east_asia_f00.png" class="model-img" alt="模式預報">
+
+            <div class="flex justify-center items-center gap-5 mb-2 mt-6">
+                <button id="prevBtn" class="control-btn" title="上一個">&lt;</button>
+                <button id="playBtn" class="control-btn" title="播放/暫停">▶</button>
+                <button id="nextBtn" class="control-btn" title="下一個">&gt;</button>
+            </div>
+        </div>
+
+        <!-- Instructions Box -->
+        <div class="model-card bg-slate-900/90 border border-slate-800 text-slate-300 p-5 mt-6">
+            <p class="font-bold mb-2 text-base text-sky-400">使用說明</p>
+            <div class="space-y-1 text-sm text-slate-400">
+                <p>• 三級選擇：模式 → 地區 → 氣象要素</p>
+                <p>• 點擊「&lt; / &gt;」切換預報時效（0~228小時，前120小時每6小時，後續每12小時）</p>
+                <p>• 點擊「▶」自動輪播（每2秒切換）</p>
+                <p>• 資料僅供參考，請以官方發布為準</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-slate-400 text-xs">
+        <p class="text-sm font-semibold text-slate-200">香港氣象追擊網 HKMETC</p>
+        <p class="mt-2 text-slate-500">© 2026 香港氣象追擊網 版權所有</p>
+    </footer>
+
+    <script>
+        const fxxList = [
+            0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120,
+            132, 144, 156, 168, 180, 192, 204, 216, 228
+        ];
+
+        let currentFxx = 0;
+        let currentModel = "ifs";
+        let currentRegion = "east_asia";
+        let currentVar = "500hpa_mslp";
+        let autoPlay = null;
+
+        const img = document.getElementById("modelImage");
+        const modelSelectText = document.getElementById("modelSelectText");
+        const regionSelectText = document.getElementById("regionSelectText");
+        const varSelectText = document.getElementById("varSelectText");
+
+        function closeAllDropdowns() {
+            document.getElementById("modelDropdown").classList.add("hidden");
+            document.getElementById("regionDropdown").classList.add("hidden");
+            document.getElementById("varDropdown").classList.add("hidden");
+        }
+
+        function updateImage() {
+            const fxxStr = String(currentFxx).padStart(2, '0');
+            // Updated path to reflect the subfolder structure: plots/{model}/{model}_{var}_{region}_f{fxx}.png
+            img.src = `plots/${currentModel}/${currentModel}_${currentVar}_${currentRegion}_f${fxxStr}.png`;
+        }
+
+        document.getElementById("modelSelectBox").addEventListener("click", (e) => {
+            e.stopPropagation();
+            const target = document.getElementById("modelDropdown");
+            const isHidden = target.classList.contains("hidden");
+            closeAllDropdowns();
+            if (isHidden) target.classList.remove("hidden");
+        });
+
+        document.getElementById("regionSelectBox").addEventListener("click", (e) => {
+            e.stopPropagation();
+            const target = document.getElementById("regionDropdown");
+            const isHidden = target.classList.contains("hidden");
+            closeAllDropdowns();
+            if (isHidden) target.classList.remove("hidden");
+        });
+
+        document.getElementById("varSelectBox").addEventListener("click", (e) => {
+            e.stopPropagation();
+            const target = document.getElementById("varDropdown");
+            const isHidden = target.classList.contains("hidden");
+            closeAllDropdowns();
+            if (isHidden) target.classList.remove("hidden");
+        });
+
+        document.querySelectorAll("#modelDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
+                currentModel = option.dataset.model;
+                modelSelectText.innerText = option.innerText;
+                updateImage();
+                closeAllDropdowns();
+            });
+        });
+
+        document.querySelectorAll("#regionDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
+                currentRegion = option.dataset.region;
+                regionSelectText.innerText = option.innerText;
+                updateImage();
+                closeAllDropdowns();
+            });
+        });
+
+        document.querySelectorAll("#varDropdown .select-option").forEach(option => {
+            option.addEventListener("click", () => {
+                currentVar = option.dataset.var;
+                varSelectText.innerText = option.innerText;
+                updateImage();
+                closeAllDropdowns();
+            });
+        });
+
+        document.addEventListener("click", closeAllDropdowns);
+
+        function stopPlay() {
+            if (autoPlay) {
+                clearInterval(autoPlay);
+                autoPlay = null;
+                document.getElementById("playBtn").innerText = "▶";
+            }
+        }
+
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            stopPlay();
+            let idx = fxxList.indexOf(currentFxx);
+            currentFxx = fxxList[(idx - 1 + fxxList.length) % fxxList.length];
+            updateImage();
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            stopPlay();
+            let idx = fxxList.indexOf(currentFxx);
+            currentFxx = fxxList[(idx + 1) % fxxList.length];
+            updateImage();
+        });
+
+        document.getElementById("playBtn").addEventListener("click", () => {
+            if (autoPlay) {
+                stopPlay();
+            } else {
+                document.getElementById("playBtn").innerText = "❚❚";
+                autoPlay = setInterval(() => {
+                    let idx = fxxList.indexOf(currentFxx);
+                    currentFxx = fxxList[(idx + 1) % fxxList.length];
+                    updateImage();
+                }, 2000);
+            }
+        });
+
+        updateImage();
+    </script>
+</body>
+</html>
