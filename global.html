@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>數值模式預報 - 香港氣象追擊網 HKMETC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            hkbg: '#0b0f19',
+            hkcard: '#111827',
+            hkinput: '#1f293d',
+            hkborder: '#2b384e',
+            hkaccent: '#3b82f6',
+            hkred: '#dc2626',
+            hkmuted: '#9ca3af'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2b384e;
+      border-radius: 3px;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #1f293d;
+      height: 8px;
+      border-radius: 4px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+      border: 2px solid #ffffff;
+    }
+  </style>
+</head>
+<body class="bg-hkbg text-white min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+  <header class="w-full bg-[#0d121f] border-b border-[#1a2333] px-4 lg:px-8 py-3 flex flex-wrap justify-between items-center z-50 sticky top-0 shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('portal')">
+        <span class="text-base font-bold tracking-wide text-white">香港氣象追擊網</span>
+        <span class="bg-[#1e293b] text-hkmuted text-xs px-2 py-0.5 rounded font-mono border border-slate-700">HKMETC</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="hidden lg:flex items-center gap-5 text-xs font-medium text-hkmuted">
+      <a href="#" class="hover:text-white transition-colors">首頁</a>
+      <a href="#" class="hover:text-white transition-colors">熱帶氣旋資訊</a>
+      <a href="#" class="hover:text-white transition-colors">實況天氣</a>
+      <a href="#" class="text-white font-bold bg-blue-600/20 text-blue-400 px-2.5 py-1 rounded border border-blue-500/30">全球模式預報</a>
+      <a href="#" class="hover:text-white transition-colors">中尺度模式預報</a>
+      <a href="#" class="hover:text-white transition-colors">集合模式預報</a>
+      <a href="#" class="hover:text-white transition-colors">地球風場動畫2.0</a>
+      <a href="#" class="hover:text-white transition-colors">臨近降雨預報</a>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <button onclick="switchView('backend')" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 font-mono">
+        <i class="fa-solid fa-code"></i> Python Herbie Code
+      </button>
+      <div class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2.5 py-1 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>系統運作正常</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow w-full max-w-[1240px] mx-auto px-4 py-6 flex flex-col items-center">
+
+    <!-- Title Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide mb-1 text-white">數值模式預報</h1>
+      <p class="text-blue-400 text-xs md:text-sm font-medium">
+        自動更新 (EC, GFS, AIFS, Graphcast, Pangu)
+      </p>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTAINER -->
+    <div id="view-portal" class="w-full flex flex-col gap-5">
+      
+      <!-- Control Bar Dropdowns -->
+      <div class="w-full bg-hkcard border border-hkborder rounded-xl p-4 md:p-5 shadow-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Weather Model Dropdown -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] text-hkmuted font-semibold uppercase tracking-wider">Weather Model 模式</label>
+            <div class="relative">
+              <select id="model-select" onchange="renderWeatherMap()" class="w-full bg-hkinput text-white border border-hkborder rounded-lg px-3.5 py-2.5 appearance-none focus:outline-none focus:border-blue-500 cursor-pointer text-sm font-medium">
+                <option value="ECMWF" selected>ECMWF (歐洲中期天氣預報中心)</option>
+                <option value="GFS">GFS (美國全球預報系統)</option>
+                <option value="AIFS">ECMWF AIFS (AI數值模式)</option>
+                <option value="Graphcast">Graphcast (DeepMind Weather)</option>
+                <option value="Pangu">Pangu Weather (盤古氣象大模型)</option>
+                <option value="HRRR">HRRR (高解析度快速更新)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-hkmuted pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Region Selector -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] text-hkmuted font-semibold uppercase tracking-wider">Region 區域</label>
+            <div class="relative">
+              <select id="region-select" onchange="renderWeatherMap()" class="w-full bg-hkinput text-white border border-hkborder rounded-lg px-3.5 py-2.5 appearance-none focus:outline-none focus:border-blue-500 cursor-pointer text-sm font-medium">
+                <option value="nw_pacific" selected>西北太平洋 (Northwest Pacific)</option>
+                <option value="east_asia">東亞地區 (East Asia)</option>
+                <option value="south_china">華南及香港 (South China / HK)</option>
+                <option value="global">全球 (Global)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-hkmuted pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Parameter Selector -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] text-hkmuted font-semibold uppercase tracking-wider">Element 要素</label>
+            <div class="relative">
+              <select id="parameter-select" onchange="renderWeatherMap()" class="w-full bg-hkinput text-white border border-hkborder rounded-lg px-3.5 py-2.5 appearance-none focus:outline-none focus:border-blue-500 cursor-pointer text-sm font-medium">
+                <option value="500hpa_mslp" selected>500hPa 位勢高度 + MSLP 海平面氣壓</option>
+                <option value="850hpa_temp">850hPa 溫度 + 風場</option>
+                <option value="precip_24h">24小時累積雨量</option>
+                <option value="2m_temp">2m 氣溫 (°C)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-hkmuted pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-hkborder/80 flex flex-col md:flex-row items-center gap-4">
+          <div class="flex items-center gap-2">
+            <button onclick="stepForecast(-1)" class="w-9 h-9 rounded-lg bg-hkinput hover:bg-slate-700 text-white border border-hkborder flex items-center justify-center transition-colors">
+              <i class="fa-solid fa-step-backward text-xs"></i>
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center transition-colors shadow-lg shadow-blue-500/20">
+              <i id="play-icon" class="fa-solid fa-play text-xs"></i>
+            </button>
+            <button onclick="stepForecast(1)" class="w-9 h-9 rounded-lg bg-hkinput hover:bg-slate-700 text-white border border-hkborder flex items-center justify-center transition-colors">
+              <i class="fa-solid fa-step-forward text-xs"></i>
+            </button>
+          </div>
+
+          <div class="flex-grow w-full flex flex-col gap-1">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-hkmuted">Forecast Hour (預報時效)</span>
+              <span id="forecast-time-text" class="text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                forecast hour: 0
+              </span>
+            </div>
+            <input type="range" id="time-slider" min="0" max="240" step="6" value="0" oninput="onSliderChange(this.value)" class="w-full cursor-pointer">
+          </div>
+
+          <div class="text-xs font-mono text-slate-400 whitespace-nowrap bg-hkbg border border-hkborder px-3 py-2 rounded-lg">
+            <span id="valid-time-badge">Valid: 00:00 UTC 20 Sep 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full bg-hkcard border border-hkborder rounded-xl p-3 md:p-6 shadow-2xl flex flex-col items-center">
+        <div class="w-full bg-white rounded overflow-hidden shadow-2xl relative flex justify-center items-center min-h-[520px]" id="canvas-container">
+          <!-- Canvas Plotter -->
+          <canvas id="hkmetc-canvas" class="max-w-full h-auto block"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="view-backend" class="w-full hidden flex-col gap-6">
+      <div class="bg-hkcard border border-hkborder rounded-xl p-6 shadow-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <i class="fa-brands fa-python text-amber-400"></i> Python Herbie Backend Plotting Pipeline
+            </h2>
+            <p class="text-xs text-hkmuted mt-1">This Python script automatically replicates the HKMETC synoptic plot style using Herbie & Cartopy.</p>
+          </div>
+          <button onclick="switchView('portal')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-medium">
+            ← Back to Dashboard
+          </button>
+        </div>
+
+        <div class="bg-[#080c14] border border-hkborder rounded-xl p-4 font-mono text-xs text-slate-300 overflow-x-auto custom-scrollbar">
+<pre class="text-blue-300"><code><span class="text-purple-400">from</span> herbie <span class="text-purple-400">import</span> Herbie
+<span class="text-purple-400">import</span> xarray <span class="text-purple-400">as</span> xr
+<span class="text-purple-400">import</span> numpy <span class="text-purple-400">as</span> np
+<span class="text-purple-400">import</span> matplotlib.pyplot <span class="text-purple-400">as</span> plt
+<span class="text-purple-400">import</span> cartopy.crs <span class="text-purple-400">as</span> ccrs
+<span class="text-purple-400">import</span> cartopy.feature <span class="text-purple-400">as</span> cfeature
+
+<span class="text-slate-500"># 1. Fetch 500hPa Height & MSLP with Herbie</span>
+date_str = <span class="text-emerald-300">"2026-09-20 00:00"</span>
+fxx = <span class="text-amber-400">0</span>
+H_gfs = Herbie(date_str, model=<span class="text-emerald-300">"gfs"</span>, product=<span class="text-emerald-300">"pgrb2.0p25"</span>, fxx=fxx)
+
+ds_hgt = H_gfs.xarray(<span class="text-emerald-300">":HGT:500 mb:"</span>)
+ds_mslp = H_gfs.xarray(<span class="text-emerald-300">":PRMSL:mean sea level:"</span>)
+
+<span class="text-slate-500"># 2. Extract Lat/Lon & Convert Units</span>
+lons = ds_hgt.longitude.values
+lats = ds_hgt.latitude.values
+hgt_dagpm = ds_hgt.gh.values / <span class="text-amber-400">10.0</span>       <span class="text-slate-500"># meters to dagpm</span>
+mslp_hpa = ds_mslp.prmsl.values / <span class="text-amber-400">100.0</span>   <span class="text-slate-500"># Pa to hPa</span>
+
+<span class="text-slate-500"># 3. Setup Cartopy Figure</span>
+fig = plt.figure(figsize=(<span class="text-amber-400">11</span>, <span class="text-amber-400">8.5</span>), dpi=<span class="text-amber-400">150</span>)
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_extent([<span class="text-amber-400">105</span>, <span class="text-amber-400">165</span>, <span class="text-amber-400">25</span>, <span class="text-amber-400">65</span>], crs=ccrs.PlateCarree())
+
+<span class="text-slate-500"># Basemap coastlines</span>
+ax.add_feature(cfeature.COASTLINE.with_scale(<span class="text-emerald-300">"50m"</span>), linewidth=<span class="text-amber-400">0.8</span>)
+ax.add_feature(cfeature.BORDERS.with_scale(<span class="text-emerald-300">"50m"</span>), linewidth=<span class="text-amber-400">0.5</span>)
+
+<span class="text-slate-500"># 4. Fill 500hPa Height (Yellow-Orange-Red HKMETC Palette)</span>
+hgt_levels = np.arange(<span class="text-amber-400">500</span>, <span class="text-amber-400">600</span>, <span class="text-amber-400">4</span>)
+cf = ax.contourf(lons, lats, hgt_dagpm, levels=hgt_levels, cmap=<span class="text-emerald-300">"YlOrRd"</span>, transform=ccrs.PlateCarree())
+
+<span class="text-slate-500"># 5. MSLP Isobar Contours</span>
+cs = ax.contour(lons, lats, mslp_hpa, levels=np.arange(<span class="text-amber-400">960</span>, <span class="text-amber-400">1048</span>, <span class="text-amber-400">4</span>), colors=<span class="text-emerald-300">"black"</span>, linewidths=<span class="text-amber-400">1.0</span>)
+ax.clabel(cs, inline=<span class="text-amber-400">True</span>, fontsize=<span class="text-amber-400">8</span>, fmt=<span class="text-emerald-300">"%d"</span>)
+
+<span class="text-slate-500"># 6. HKMETC Red Header Annotation</span>
+header_title = f<span class="text-emerald-300">"ECMWF: 0.25 degree resolution\nValid: 00:00 UTC 20 Sep 2026\ninitialized at 00:00 UTC 20 Sep 2026\nforecast hour:{fxx}\nPlotted by HKMETC\n500hPa Geopotential Height (dagpm) + MSLP(hPa)"</span>
+fig.text(<span class="text-amber-400">0.5</span>, <span class="text-amber-400">0.93</span>, header_title, ha=<span class="text-emerald-300">"center"</span>, va=<span class="text-emerald-300">"top"</span>, color=<span class="text-emerald-300">"#b91c1c"</span>, fontsize=<span class="text-amber-400">9</span>, fontweight=<span class="text-emerald-300">"bold"</span>)
+
+plt.savefig(<span class="text-emerald-300">"hkmetc_synoptic_map.png"</span>, bbox_inches=<span class="text-emerald-300">"tight"</span>)
+</code></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="w-full bg-[#080c14] border-t border-[#1a2333] py-4 text-center text-xs text-hkmuted">
+    <p>© 香港氣象追擊網 HKMETC Weather Portal | High-Fidelity Synoptic Map Engine</p>
+  </footer>
+
+  <script>
+    const state = {
+      model: 'ECMWF',
+      region: 'nw_pacific',
+      parameter: '500hpa_mslp',
+      forecastHour: 0,
+      isPlaying: false,
+      timer: null
+    };
+
+    const canvas = document.getElementById('hkmetc-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function switchView(view) {
+      document.getElementById('view-portal').classList.toggle('hidden', view !== 'portal');
+      document.getElementById('view-backend').classList.toggle('hidden', view !== 'backend');
+      if (view === 'portal') renderWeatherMap();
+    }
+
+    function onSliderChange(val) {
+      state.forecastHour = parseInt(val);
+      document.getElementById('forecast-time-text').innerText = `forecast hour:${state.forecastHour}`;
+      updateValidTimeText();
+      renderWeatherMap();
+    }
+
+    function stepForecast(step) {
+      let newHour = state.forecastHour + (step * 6);
+      if (newHour < 0) newHour = 240;
+      if (newHour > 240) newHour = 0;
+      state.forecastHour = newHour;
+      document.getElementById('time-slider').value = newHour;
+      document.getElementById('forecast-time-text').innerText = `forecast hour:${state.forecastHour}`;
+      updateValidTimeText();
+      renderWeatherMap();
+    }
+
+    function togglePlay() {
+      state.isPlaying = !state.isPlaying;
+      const playIcon = document.getElementById('play-icon');
+      const btnPlay = document.getElementById('btn-play');
+
+      if (state.isPlaying) {
+        playIcon.className = 'fa-solid fa-pause text-xs';
+        btnPlay.classList.replace('bg-blue-600', 'bg-amber-600');
+        state.timer = setInterval(() => {
+          stepForecast(1);
+        }, 1200);
+      } else {
+        playIcon.className = 'fa-solid fa-play text-xs';
+        btnPlay.classList.replace('bg-amber-600', 'bg-blue-600');
+        clearInterval(state.timer);
+      }
+    }
+
+    function updateValidTimeText() {
+      const initDate = new Date(Date.UTC(2026, 8, 20, 0, 0));
+      const validDate = new Date(initDate.getTime() + state.forecastHour * 3600 * 1000);
+      const utcStr = validDate.toUTCString().replace('GMT', 'UTC');
+      document.getElementById('valid-time-badge').innerText = `Valid: ${utcStr}`;
+    }
+
+    function renderWeatherMap() {
+      state.model = document.getElementById('model-select').value;
+      state.region = document.getElementById('region-select').value;
+      state.parameter = document.getElementById('parameter-select').value;
+
+      // Set canvas resolution (high resolution for crisp text)
+      canvas.width = 900;
+      canvas.height = 700;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 1. White Background Frame matching HKMETC reference
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+
+      // 2. Centered Red Text Header Overlay
+      ctx.fillStyle = '#cc0000';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 12px monospace';
+
+      const initDateStr = "00:00 UTC 20 Sep 2026";
+      const hktInitStr = "08:00 CST/HKT/MST 20 Sep 2026";
+      
+      const validDt = new Date(Date.UTC(2026, 8, 20, state.forecastHour, 0));
+      const validUtcHour = String(validDt.getUTCHours()).padStart(2, '0');
+      const validHktHour = String((validDt.getUTCHours() + 8) % 24).padStart(2, '0');
+      const validDay = validDt.getUTCDate();
+      
+      ctx.fillText(`${state.model}: 0.25 degree resolution`, w / 2, 22);
+      ctx.fillText(`Valid: ${validUtcHour}:00 UTC ${validDay} Sep 2026 or ${validHktHour}:00 CST/HKT/MST ${validDay} Sep 2026`, w / 2, 38);
+      ctx.fillText(`initialized at ${initDateStr} or ${hktInitStr}`, w / 2, 54);
+      ctx.fillText(`forecast hour:${state.forecastHour}`, w / 2, 70);
+      ctx.fillText(`Plotted by HKMETC`, w / 2, 86);
+
+      let paramTitle = "500hPa Geopotential Height (dagpm) + MSLP(hPa)";
+      if (state.parameter === '850hpa_temp') paramTitle = "850hPa Temperature (°C) + Wind Vectors";
+      if (state.parameter === 'precip_24h') paramTitle = "24-Hour Accumulated Precipitation (mm)";
+      if (state.parameter === '2m_temp') paramTitle = "2m Temperature (°C)";
+      ctx.fillText(paramTitle, w / 2, 102);
+
+      // 3. Map Box Bounds
+      const mapX = 80;
+      const mapY = 120;
+      const mapW = 740;
+      const mapH = 530;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(mapX, mapY, mapW, mapH);
+      ctx.clip();
+
+      const fStep = state.forecastHour / 6;
+
+      // 4. Fill 500hPa Height Heatmap Gradient (Yellow -> Orange -> Red)
+      const numBands = 30;
+      const bandH = mapH / numBands;
+
+      for (let i = 0; i < numBands; i++) {
+        const bandY = mapY + i * bandH;
+        // Calculate heat value based on latitude and forecast hour
+        const progress = (i / numBands) + Math.sin(i * 0.2 + fStep * 0.1) * 0.05;
+        
+        let color = '#fee08b'; // Yellow (576+ dagpm)
+        if (progress < 0.25) color = '#d73027'; // Dark Red (North cold trough)
+        else if (progress < 0.45) color = '#f46d43'; // Orange
+        else if (progress < 0.70) color = '#fdae61'; // Light Orange
+        else color = '#fee08b'; // Subtropical ridge yellow
+
+        ctx.fillStyle = color;
+        ctx.fillRect(mapX, bandY, mapW, bandH + 1);
+      }
+
+      // 5. Draw Lat/Lon Gridlines & Labels
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 0.5;
+      ctx.fillStyle = '#000000';
+      ctx.font = '10px sans-serif';
+
+      // Longitude Lines (110°E, 120°E, 130°E, 140°E, 150°E, 160°E)
+      const lons = ['110°E', '120°E', '130°E', '140°E', '150°E', '160°E'];
+      lons.forEach((lon, idx) => {
+        const lx = mapX + (idx + 1) * (mapW / 7);
+        ctx.beginPath();
+        ctx.moveTo(lx, mapY);
+        ctx.lineTo(lx, mapY + mapH);
+        ctx.stroke();
+        ctx.fillText(lon, lx - 12, mapY - 4);
+      });
+
+      // Latitude Lines (30°N, 40°N, 50°N, 60°N)
+      const lats = [{ label: '60°N', y: mapY + mapH * 0.15 },
+                    { label: '50°N', y: mapY + mapH * 0.38 },
+                    { label: '40°N', y: mapY + mapH * 0.62 },
+                    { label: '30°N', y: mapY + mapH * 0.85 }];
+      lats.forEach(lat => {
+        ctx.beginPath();
+        ctx.moveTo(mapX, lat.y);
+        ctx.lineTo(mapX + mapW, lat.y);
+        ctx.stroke();
+        ctx.fillText(lat.label, mapX - 32, lat.y + 4);
+        ctx.fillText(lat.label, mapX + mapW + 5, lat.y + 4);
+      });
+
+      // 6. Draw Realistic Coastlines (East Asia, Japan, China, Taiwan)
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.2;
+
+      // China / Asian Continent Outline
+      ctx.beginPath();
+      ctx.moveTo(mapX, mapY + mapH * 0.2);
+      ctx.lineTo(mapX + mapW * 0.15, mapY + mapH * 0.25);
+      ctx.lineTo(mapX + mapW * 0.25, mapY + mapH * 0.4);
+      ctx.lineTo(mapX + mapW * 0.30, mapY + mapH * 0.6); // Bohai / Yellow Sea
+      ctx.lineTo(mapX + mapW * 0.22, mapY + mapH * 0.75); // South China coast
+      ctx.lineTo(mapX, mapY + mapH * 0.85);
+      ctx.stroke();
+
+      // Korean Peninsula
+      ctx.beginPath();
+      ctx.moveTo(mapX + mapW * 0.30, mapY + mapH * 0.48);
+      ctx.lineTo(mapX + mapW * 0.33, mapY + mapH * 0.58);
+      ctx.lineTo(mapX + mapW * 0.35, mapY + mapH * 0.52);
+      ctx.stroke();
+
+      // Japan Islands
+      ctx.beginPath();
+      ctx.moveTo(mapX + mapW * 0.38, mapY + mapH * 0.60);
+      ctx.quadraticCurveTo(mapX + mapW * 0.48, mapY + mapH * 0.45, mapX + mapW * 0.58, mapY + mapH * 0.30);
+      ctx.stroke();
+
+      // Taiwan
+      ctx.beginPath();
+      ctx.ellipse(mapX + mapW * 0.24, mapY + mapH * 0.78, 4, 9, Math.PI / 8, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 7. MSLP Isobars & Isobar Contour Labels
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 1.0;
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 9px monospace';
+
+      const isobars = [1008, 1012, 1016, 1020, 1024, 1028, 1032];
+      isobars.forEach((val, idx) => {
+        ctx.beginPath();
+        const baseOffsetY = mapY + (idx * 30) + Math.sin(fStep + idx) * 12;
+        
+        for (let x = mapX; x <= mapX + mapW; x += 15) {
+          const wave = Math.sin((x - mapX) / 50 + fStep * 0.2 + idx) * 20 + Math.cos((x - mapX) / 80) * 15;
+          const y = baseOffsetY + wave;
+          if (x === mapX) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+
+          // Inline isobar numerical text label
+          if (x === mapX + 220 || x === mapX + 480) {
+            ctx.fillText(String(val), x, y - 2);
+          }
+        }
+        ctx.stroke();
+      });
+
+      // Highlight 588dagpm Ridge Line (Subtropical High)
+      ctx.strokeStyle = '#a50026';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      const ridgeY = mapY + mapH * 0.70 + Math.sin(fStep * 0.3) * 15;
+      ctx.moveTo(mapX + mapW * 0.3, ridgeY);
+      ctx.bezierCurveTo(mapX + mapW * 0.5, ridgeY - 30, mapX + mapW * 0.7, ridgeY + 20, mapX + mapW, ridgeY - 10);
+      ctx.stroke();
+      ctx.fillStyle = '#a50026';
+      ctx.fillText('588 dagpm', mapX + mapW * 0.6, ridgeY - 10);
+
+      // 8. High / Low Pressure Centers ('H' / 'L')
+      // High Pressure System (Siberia/East Asia)
+      const highX = mapX + mapW * 0.18;
+      const highY = mapY + mapH * 0.28;
+      ctx.fillStyle = '#0044cc';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText('H', highX, highY);
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('1034', highX - 8, highY + 14);
+
+      // Low Pressure Center / Tropical Cyclone
+      const lowX = mapX + mapW * 0.45 + Math.sin(fStep * 0.2) * 40;
+      const lowY = mapY + mapH * 0.85 - (fStep * 8);
+      ctx.fillStyle = '#cc0000';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('L', lowX, lowY);
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('996', lowX - 6, lowY + 14);
+
+      // Concentric circles around Low Pressure
+      ctx.strokeStyle = '#cc0000';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(lowX + 6, lowY - 6, 18, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(lowX + 6, lowY - 6, 32, 0, Math.PI * 2); ctx.stroke();
+
+      ctx.restore();
+
+      // Outer Map Border
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(mapX, mapY, mapW, mapH);
+    }
+
+    // Startup Initialization
+    window.onload = function() {
+      updateValidTimeText();
+      renderWeatherMap();
+    };
+  </script>
+</body>
+</html>
