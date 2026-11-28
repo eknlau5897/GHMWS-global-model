@@ -1,0 +1,91 @@
+name: Auto Generate Model Plots (macOS)
+
+on:
+  schedule:
+    - cron: '0 8,20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-plot:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Safe Free Disk Space on macOS
+        run: |
+          echo "=== 磁碟清理前狀況 ==="
+          df -h
+          sudo rm -rf /Applications/Xcode*.app
+          sudo rm -rf /usr/local/Cellar/android-sdk
+          sudo rm -rf /usr/local/opt/android-sdk
+          brew cleanup -s || true
+          rm -rf $(brew --cache) || true
+          echo "=== 磁碟清理後狀況 ==="
+          df -h
+
+      - name: Ensure Xcode Command Line Tools
+        run: |
+          if ! xcode-select -p >/dev/null 2>&1; then
+            echo "Command Line Tools missing, installing..."
+            xcode-select --install || true
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies via Homebrew
+        run: |
+          brew update || true
+          brew install geos eccodes
+
+      - name: Install Python Packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy matplotlib cartopy herbie-data xarray cfgrib ecmwf-opendata
+
+      - name: Clear Old Herbie Cache Before Run
+        run: |
+          rm -rf ~/data
+          echo "Pre-run Herbie cache cleared."
+
+      - name: Run Plot Generator Script
+        env:
+          ECCODES_PATH: /opt/homebrew
+        run: |
+          python -u global.py
+
+      - name: Clean Temporary GRIB Cache
+        if: always()
+        run: |
+          rm -rf ~/data
+          echo "Herbie GRIB 快取已清理"
+
+      - name: Clear Git History and Keep Latest Commit
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+
+          git checkout --orphan temp-branch
+          git add -A
+          git commit -m "Auto-update model plots [skip ci]"
+
+          git branch -D main || true
+          git branch -m main
+
+          n=0
+          until [ "$n" -ge 5 ]; do
+            git push origin main --force && break
+            n=$((n+1))
+            echo "Force push failed. Retrying in 5s ($n/5)..."
+            sleep 5
+          done
